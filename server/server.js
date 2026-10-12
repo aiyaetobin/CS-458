@@ -1,13 +1,26 @@
 const express = require('express');
 
+
 const app = express();
+const port = 3000;
+
+//middleware
+app.use(express.json());
 
 
-//search endpoint
-//when request to endpoint it should make a call to whatever is sending a 
-app.post('search', async (req, res)){
+//login endpoint
+app.get('/login', async (req, res) => {
+  console.log(req.body);
+
+  res.status(200).json({
+    message: "Login endpoint received your request"
+  });
+});
+
+
+app.post('/search', async (req, res) => {
   
-} 
+});
 
 
 app.listen(port, () => {
