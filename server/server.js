@@ -1,14 +1,15 @@
 const express = require('express');
 require('dotenv').config();
 const { OAuth2Client } = require('google-auth-library');
-
+const cors = require('cors');
+ 
 const app = express();
 const port = 3000;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 //middleware
 app.use(express.json());
-
+app.use(cors({origin: 'http://localhost:5173'}));
 
 //login endpoint
 app.post('/login', async (req, res) => {
