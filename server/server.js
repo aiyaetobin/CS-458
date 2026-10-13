@@ -1,5 +1,5 @@
-const express = require('express');
 require('dotenv').config();
+const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const cors = require('cors');
  
@@ -11,11 +11,16 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 app.use(express.json());
 app.use(cors({origin: 'http://localhost:5173'}));
 
-//login endpoint
-app.post('/login', async (req, res) => {
-  const {credential} = req.body;
+/* LOGIN ENDPOINT
 
-  // verify google token
+ The front end sends a POST request to /login with the body being set as the 
+ credential from GoogleLogin. The endpoint verifies the credential it gets using
+ verifyIdToken. it creates a user object with everything it needs from the payload
+ it then sends the endpoint response back to the fron end 
+*/
+app.post('/login', async (req, res) => {
+  const {credential} = req.body; //from front end post request body
+
     try{
     const ticket = await googleClient.verifyIdToken({
       idToken: credential,
@@ -30,19 +35,23 @@ app.post('/login', async (req, res) => {
         picture: payload.picture
       };
 
-    return res.status(200).json({
+    return res.status(200).json({ //send json user back if successful
         message: 'Google authentication successful',
         user
     });
+
   }catch(error){
-    return res.status(401).json({
+    return res.status(401).json({ 
     error: 'Invalid Google credential'
     });
   }
 });
 
+/*  MAIN ENDPOINT
+  this endpoint is called for as a get request and it is 
+*/
 
-app.post('/search', async (req, res) => {
+app.get('/main', async (req, res) => {
   
 });
 
