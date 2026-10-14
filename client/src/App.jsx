@@ -12,11 +12,11 @@ function App() {
     const handleLoginSuccess = async (credentialResponse) => {
       try {
             const response = await fetch('http://localhost:3000/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ credential: credentialResponse.credential })
+              body: JSON.stringify({ credential: credentialResponse.credential })
             }
             );
             const data = await response.json();
