@@ -47,11 +47,8 @@ app.post('/login', async (req, res) => {
   }
 });
 
-/*  MAIN ENDPOINT
-  this endpoint is called for as a get request and it is 
-*/
 
-app.get('/main', async (req, res) => {
+app.get('/search', async (req, res) => {
   
 });
 
