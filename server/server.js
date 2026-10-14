@@ -6,26 +6,10 @@ const cors = require('cors');
 const app = express();
 const port = 3000;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const session = require('express-session');
 
 //middleware
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
 app.use(express.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60
-  }
-}));
-
+app.use(cors({origin: 'http://localhost:5173'}));
 
 /* LOGIN ENDPOINT
 
@@ -51,22 +35,6 @@ app.post('/login', async (req, res) => {
         picture: payload.picture
       };
 
-      req.session.regenerate((error) => {
-        if (error) {
-          console.error('Session regeneration error:', error);
-          return res.status(500).json({ error: 'Session regeneration failed' });
-        }
-        req.session.user = user;
-      });
-
-      req.session.save((error) => {
-        console.error('Session save error:', error);
-        if (error) {
-          return res.status(500).json({ error: 'Session save failed' });
-        }
-          
-      });
-
     return res.status(200).json({ //send json user back if successful
         message: 'Google authentication successful',
         user
@@ -79,14 +47,8 @@ app.post('/login', async (req, res) => {
   }
 });
 
-/* SEARCH ENDPOINT
 
-  front end sends a post request to /search with the body being set as the search 
-  parameters they use the endpoint will query wherever these results are coming from 
-  and send them back to the front in json form.  
-*/
-
-app.post ('/search', async (req, res) => {
+app.get('/search', async (req, res) => {
     
 });
 

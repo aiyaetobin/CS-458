@@ -13,11 +13,10 @@ function App() {
       try {
             const response = await fetch('http://localhost:3000/login', {
               method: 'POST',
-              credentials: 'include',
               headers: {
                 'Content-Type': 'application/json'
-              },
-              bosdy: JSON.stringify({ credential: credentialResponse.credential })
+            },
+              body: JSON.stringify({ credential: credentialResponse.credential })
             }
             );
             const data = await response.json();

@@ -5,7 +5,7 @@ function Dashboard( user ) { //keeping track of user done by App.jsx
   return (
     <div>
       <h1>Dashboard</h1>
-      <p>Welcome, {user.email}!</p>
+      <p>Welcome, {user.name}!</p>
 
       <form method="POST">
         <label for="search">Title</label>
