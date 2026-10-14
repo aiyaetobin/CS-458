@@ -1,5 +1,7 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
+import Dashboard from './Dashboard.jsx';
+import { useState } from 'react';
 
 
 
@@ -32,13 +34,21 @@ function App() {
           }
         }
   return (
-    <div>
+    
+    user ?(//user logged in show dashboard 
+      <div>
+      <Dashboard user={user} />
+      </div> 
+
+    ): (//user not logged in show login page
+      <div>
       <h1>BOOK-LOOK</h1>
       <p>Login</p>
+    
       <GoogleLogin
         /*
-        if the google login is successful we send the credential to the backend sending a post to the
-         backend login endpoint in json form which the endpoint
+        if the google login is successful we send the credential to the backend sending a
+         post to the backend login endpoint in json form which the endpoint
         handles and then the backend sends the credential back in json 
         */
         onSuccess={async (credentialResponse) => {
@@ -47,10 +57,9 @@ function App() {
         onError={() => {
           console.log('Login Failed');
         }}
-
       />
-
     </div>
+    )
   );
 }
 
