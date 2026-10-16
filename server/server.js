@@ -12,7 +12,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 app.use(express.json());
 app.use(cors({
   origin: 'http://localhost:5173',
-  credentials: true
+  credentials: true //session needed  
 }));
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -46,7 +46,7 @@ app.post('/login', async (req, res) =>
       picture: payload.picture
     };
 
-    req.session.user = user;
+    req.session.user = user; //sets the user in the session  
 
     return res.status(200).json({ //send json user back if successful
       message: 'Google authentication successful',
@@ -59,6 +59,22 @@ app.post('/login', async (req, res) =>
       error: 'Invalid Google credential'
     });
   }
+});
+
+app.get('/session', (req, res) =>
+{
+  if (req.session.user)
+  {
+
+    return res.status(200).json({
+      loggedIn: true,
+      user: req.session.user
+    })
+  }
+
+  return res.status(401).json({
+    loggedIn: false
+  })
 });
 
 

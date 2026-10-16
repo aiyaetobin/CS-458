@@ -1,14 +1,41 @@
 import React from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import Dashboard from './Dashboard.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 
 
 function App()
 {
+  console.log("APP COMPONENT IS RENDERING");
+  const [user, setUser] = useState(null); //automatically sets user to null when the page is refreshed
 
-  const [user, setUser] = useState(null);
+  //gets /session after the page is loaded to check if user is logged in 
+  useEffect(() =>
+  {
+    console.log("Checking session...");
+
+    fetch('http://localhost:3000/session', {
+      credentials: 'include'
+    })
+      .then(response => response.json())
+      .then(data =>
+      {
+        if (data.loggedIn)
+        {
+          setUser(data.user);
+        }
+        console.log("Session response:", data);
+      })
+      .catch(error =>
+      {
+        console.error("Session error:", error);
+      });
+
+  }, []);
+
+  //gets /session after the page is loaded to check if user is logged in 
+ 
 
   const handleLoginSuccess = async (credentialResponse) =>
   {
@@ -16,7 +43,7 @@ function App()
     {
       const response = await fetch('http://localhost:3000/login', {
         method: 'POST',
-        credentials: 'include',
+        credentials: 'include', //for session cookie
         headers: {
           'Content-Type': 'application/json'
         },
