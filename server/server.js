@@ -112,6 +112,7 @@ app.get('/api/alma/search', async (req, res) =>{
 
   const response = await fetch(url);
   const data =  await response.text();
+  console.log(data);
 
   res.status(200).send(data);
 });
