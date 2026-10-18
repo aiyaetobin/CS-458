@@ -3,10 +3,16 @@ const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const cors = require('cors');
 const session = require('express-session');
+const { XMLParser } = require("fast-xml-parser");
 
 const app = express();
 const port = 3000;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "@_"
+});
+
 
 //middleware
 app.use(express.json());
@@ -83,6 +89,32 @@ app.get('/search', async (req, res) =>
 
 });
 
+
+
+
+// ***************TESTING ENDPOINTS*************** understanding alma no API
+app.get('/api/alma/search', async (req, res) =>{
+  //1. get class from url
+  const classification = req.query.class; 
+//2. create CQL query for Alma API
+  const cql = 'alma.permanentCallNumber=${classification}';
+//3. alma sru endpoint
+  const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL';
+  
+  const url = new URL(baseUrl);
+
+  //4. add querry parameters
+  url.searchParams.append('version', '1.2');
+  url.searchParams.append('operation', 'searchRetrieve');
+  url.searchParams.append('recordSchema', 'marcxml');
+  url.searchParams.append('query', cql);
+  url.searchParams.append('maximumRecords', '10');
+
+  const response = await fetch(url);
+  const data =  await response.text();
+
+  res.status(200).send(data);
+});
 
 app.listen(port, () =>
 {
