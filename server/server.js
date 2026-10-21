@@ -95,9 +95,10 @@ app.get('/search', async (req, res) =>
 // ***************TESTING ENDPOINTS*************** understanding alma no API
 app.get('/api/alma/search', async (req, res) =>{
   //1. get class from url
-  const classification = req.query.class; 
+  const classification = 'TJ211';  //robotics
 //2. create CQL query for Alma API
-  const cql = 'alma.permanentCallNumber=${classification}';
+  const cql = 'alma.permanentCallNumber=TJ211';
+  console.log('CQL Query:', cql);
 //3. alma sru endpoint
   const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL';
   
@@ -110,14 +111,19 @@ app.get('/api/alma/search', async (req, res) =>{
   url.searchParams.append('query', cql);
   url.searchParams.append('maximumRecords', '10');
 
+  console.log(url.toString());
+
   const response = await fetch(url);
   const data =  await response.text();
+
   console.log(data);
 
-  res.status(200).send(data);
+  
+  return res.status(200).json(data);
 });
 
 app.listen(port, () =>
 {
   console.log(`Server running on http://localhost:${port}`);
 });
+
