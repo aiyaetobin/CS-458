@@ -93,32 +93,28 @@ app.get('/search', async (req, res) =>
 
 
 // ***************TESTING ENDPOINTS*************** understanding alma no API
-app.get('/api/alma/search', async (req, res) =>{
+app.get('/api/alma/search', async (req, res) =>
+{
   //1. get class from url
   const classification = 'TJ211';  //robotics
-//2. create CQL query for Alma API
-  const cql = 'alma.permanentCallNumber=TJ211';
+  //2. create CQL query for Alma API
+  const cql = `alma.PermanentCallNumber=${classification}`;
   console.log('CQL Query:', cql);
-//3. alma sru endpoint
-  const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL';
-  
-  const url = new URL(baseUrl);
+  //3. alma sru endpoint
+  const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?';
 
-  //4. add querry parameters
-  url.searchParams.append('version', '1.2');
-  url.searchParams.append('operation', 'searchRetrieve');
-  url.searchParams.append('recordSchema', 'marcxml');
-  url.searchParams.append('query', cql);
-  url.searchParams.append('maximumRecords', '10');
+  const url = `${baseUrl}version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=${cql}&maximumRecords=10`;
+
+
 
   console.log(url.toString());
 
   const response = await fetch(url);
-  const data =  await response.text();
+  const data = await response.text();
 
-  console.log(data);
+  console.log(url.toString());
 
-  
+
   return res.status(200).json(data);
 });
 
