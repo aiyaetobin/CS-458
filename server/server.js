@@ -12,7 +12,7 @@ const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "@_"
 });
-
+const apiKey = process.env.ALMA_API_KEY;
 
 //middleware
 app.use(express.json());
