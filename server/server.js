@@ -118,6 +118,19 @@ app.get('/api/alma/search:class', async (req, res) =>
   return res.status(200).json(data);
 });
 
+app.get('/api/LOC/search/', async (req, res) =>
+{
+ 
+  const isbn = " ";
+  const url =  'https://lx2.loc.gov/sru/lcdb?version=1.1&operation=searchRetrieve&query=bath.isbn%3D%209781641525848&recordSchema=marcxml&maximumRecords=10';
+  const response = await fetch(url);
+  const data = await response.text()
+
+  const parsedXml = parser.parse(data);
+
+  return res.status(200).json(parsedXml);
+});
+
 app.listen(port, () =>
 {
   console.log(`Server running on http://localhost:${port}`);
