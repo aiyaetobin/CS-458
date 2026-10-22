@@ -61,10 +61,8 @@ app.post('/login', async (req, res) =>
 
   } catch (error)
   {
-    console.error("Google login failed:", error.message);
-
     return res.status(401).json({
-      error: "Google authentication failed"
+      error: 'Invalid Google credential'
     });
   }
 });
@@ -106,6 +104,8 @@ app.get('/api/alma/search:class', async (req, res) =>
   const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?';
 
   const url = `${baseUrl}version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=${cql}&maximumRecords=10`;
+
+
 
   console.log(url.toString());
 
