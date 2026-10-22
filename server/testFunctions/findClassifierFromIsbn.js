@@ -2,6 +2,7 @@
 //needs to be used to find out the library of congress classification so that it can be used to 
 //query the alma api for book usage in that section
 
+//***** this is just a test function for now*****
 
 async function findClassifierFromIsbn()
 {
