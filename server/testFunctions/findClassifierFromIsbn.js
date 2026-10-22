@@ -1,6 +1,6 @@
 //a user will search for a book by isbn you can click on that book to generate a report the isbn 
 //needs to be used to find out the library of congress classification so that it can be used to 
-//query the alma api for book usage in that section
+//query the alma api
 
 //***** this is just a test function for now*****
 

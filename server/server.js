@@ -95,10 +95,10 @@ app.get('/search', async (req, res) =>
 
 
 // ***************TESTING ENDPOINTS*************** understanding alma no API
-app.get('/api/alma/search', async (req, res) =>
+app.get('/api/alma/search:class', async (req, res) =>
 {
   //1. get class from url
-  const classification = 'TJ211';  //robotics
+  const classification = 'class';  //robotics
   //2. create CQL query for Alma API
   const cql = `alma.PermanentCallNumber=${classification}`;
   console.log('CQL Query:', cql);
