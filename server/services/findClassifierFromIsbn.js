@@ -3,18 +3,17 @@
 //query the alma api
 
 
-async function findClassifierFromIsbn()
+async function findClassifierFromIsbn(isbn)
 {
-
-    const response = await fetch("http://localhost:3000/api/LOC/search/");
+    const searchIsbn = isbn;
+    const response = await fetch(`http://localhost:3000/api/LOC/search/${encodeURIComponent(searchIsbn)}`);
 
     const parsedXml = await response.json(); // the endpoint returns the xml response from LOC as xml text parsed into javascript objects
-
-    const fields = parsedXml["zs:searchRetrieveResponse"] // the information we want, the 050 field meaning library of congress classifier is stored in the datafield sub-object of the parsedXml so we save that
-    ["zs:records"]
-    ["zs:record"]
-    ["zs:recordData"]
-    ["record"]
+    const fields = parsedXml["zs:searchRetrieveResponse"]?. // the information we want, the 050 field meaning library of congress classifier is stored in the datafield sub-object of the parsedXml so we save that
+    ["zs:records"]?.
+    ["zs:record"]?.
+    ["zs:recordData"]?.
+    ["record"]?.
     ["datafield"]; 
 
     const lcField = fields?.find(field => field["@_tag"] === "050"); //this looks for a subfield where the datafield tag is 050
@@ -27,4 +26,4 @@ async function findClassifierFromIsbn()
     return locClassifier;
 }
 
-findClassifierFromIsbn();
+findClassifierFromIsbn('9781433502415');

@@ -93,17 +93,24 @@ app.get('/search', async (req, res) =>
 
 
 // ***************TESTING ENDPOINTS*************** understanding alma no API
-app.get('/api/alma/search:class', async (req, res) =>
+app.get('/api/alma/search/:classifier', async (req, res) =>
 {
-  //1. get class from url
-  const classification = 'class';  //robotics
-  //2. create CQL query for Alma API
+  //get class from url
+  const classification = req.params.classifier;  //robotics
+  //create CQL query for Alma API
   const cql = `alma.PermanentCallNumber=${classification}`;
   console.log('CQL Query:', cql);
-  //3. alma sru endpoint
+  //alma sru endpoint
   const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?';
 
-  const url = `${baseUrl}version=1.2&operation=searchRetrieve&recordSchema=marcxml&query=${cql}&maximumRecords=10`;
+  const url = new URL(baseUrl);
+
+  // 4. Add query parameters
+  url.searchParams.append('version', '1.2');
+  url.searchParams.append('operation', 'searchRetrieve');
+  url.searchParams.append('recordSchema', 'marcxml');
+  url.searchParams.append('query', cql);
+  url.searchParams.append('maximumRecords', '10');
 
 
 
@@ -112,17 +119,26 @@ app.get('/api/alma/search:class', async (req, res) =>
   const response = await fetch(url);
   const data = await response.text();
 
+  const parsedXml = parser.parse(data);
+
   console.log(url.toString());
 
 
-  return res.status(200).json(data);
+  return res.status(200).json(parsedXml);
 });
 
-app.get('/api/LOC/search/', async (req, res) =>
+app.get('/api/LOC/search/:isbn', async (req, res) =>
 {
  
-  const isbn = " ";
-  const url =  'https://lx2.loc.gov/sru/lcdb?version=1.1&operation=searchRetrieve&query=bath.isbn%3D%209781641525848&recordSchema=marcxml&maximumRecords=10';
+  const searchIsbn = req.params.isbn;
+ const url = new URL("https://lx2.loc.gov/sru/lcdb");
+
+  url.searchParams.append("version", "1.1");
+  url.searchParams.append("operation", "searchRetrieve");
+  url.searchParams.append("query", `bath.isbn= ${searchIsbn}`);
+  url.searchParams.append("recordSchema", "marcxml");
+  url.searchParams.append("maximumRecords", "10");
+
   const response = await fetch(url);
   const data = await response.text()
 
