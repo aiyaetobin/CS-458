@@ -84,22 +84,13 @@ app.get('/session', (req, res) =>
 });
 
 
-app.get('/search', async (req, res) =>
-{
-
-});
-
-
-
-
-// ***************TESTING ENDPOINTS*************** understanding alma no API
+// ***************TESTING ENDPOINTS*************** understanding alma api and LOC api
 app.get('/api/alma/search/:classifier', async (req, res) =>
 {
   //get class from url
-  const classification = req.params.classifier;  //robotics
+  const classification = req.params.classifier;  
   //create CQL query for Alma API
   const cql = `alma.PermanentCallNumber=${classification}`;
-  console.log('CQL Query:', cql);
   //alma sru endpoint
   const baseUrl = 'https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?';
 
@@ -112,10 +103,6 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
   url.searchParams.append('query', cql);
   url.searchParams.append('maximumRecords', '10');
 
-
-
-  console.log(url.toString());
-
   const response = await fetch(url);
   const data = await response.text();
 
@@ -123,15 +110,14 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
 
   console.log(url.toString());
 
-
   return res.status(200).json(parsedXml);
 });
 
 app.get('/api/LOC/search/:isbn', async (req, res) =>
 {
- 
+ //construct url
   const searchIsbn = req.params.isbn;
- const url = new URL("https://lx2.loc.gov/sru/lcdb");
+  const url = new URL("https://lx2.loc.gov/sru/lcdb");
 
   url.searchParams.append("version", "1.1");
   url.searchParams.append("operation", "searchRetrieve");

@@ -17,8 +17,8 @@ async function findClassifierFromIsbn(isbn)
     ["datafield"]; 
 
     const lcField = fields?.find(field => field["@_tag"] === "050"); //this looks for a subfield where the datafield tag is 050
-    const lcClass = lcField.subfield?.find(field => field["@_code"] === "a"); //looks for a code in 050 (the class)
-    const lcCutter = lcField.subfield?.find(field => field["@_code"] === "b");//looks for b code in 050 (the cutter)
+    const lcClass = lcField?.subfield?.find(field => field["@_code"] === "a"); //looks for a code in 050 (the class)
+    const lcCutter = lcField?.subfield?.find(field => field["@_code"] === "b");//looks for b code in 050 (the cutter)
 
     const locClassifier = lcClass["#text"] + " " + lcCutter["#text"]; // this gives us the full library of congress number the class+cutter
 

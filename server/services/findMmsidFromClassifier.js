@@ -11,7 +11,7 @@ async function findMmsidFromClassifier(classifier){
     ["records"]?.
     ["record"]
    //looks through records which is an array of books for every book it looks into their control field held below recordData and record for each book it finds
-   //  their controlfield tag 001 meaning mmsid and returns it to map to be compiled all together into a string of mms ids
+   //  their controlfield tag 001 meaning mmsid and returns it to map to be compiled all together into a array of mms ids
    // these id's can then be each individually used to query alma api for usage data and return the 5 lowest ones
    
     const mmsIds = records.map(book => {
