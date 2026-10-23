@@ -88,7 +88,7 @@ app.get('/session', (req, res) =>
 app.get('/api/alma/search/:classifier', async (req, res) =>
 {
   //get class from url
-  const classification = req.params.classifier;  
+  const classification = req.params.classifier;
   //create CQL query for Alma API
   const cql = `alma.PermanentCallNumber=${classification}`;
   //alma sru endpoint
@@ -96,7 +96,7 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
 
   const url = new URL(baseUrl);
 
-  // 4. Add query parameters
+  // Add query parameters
   url.searchParams.append('version', '1.2');
   url.searchParams.append('operation', 'searchRetrieve');
   url.searchParams.append('recordSchema', 'marcxml');
@@ -115,7 +115,7 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
 
 app.get('/api/LOC/search/:isbn', async (req, res) =>
 {
- //construct url
+  //construct url
   const searchIsbn = req.params.isbn;
   const url = new URL("https://lx2.loc.gov/sru/lcdb");
 
@@ -131,6 +131,47 @@ app.get('/api/LOC/search/:isbn', async (req, res) =>
   const parsedXml = parser.parse(data);
 
   return res.status(200).json(parsedXml);
+});
+
+
+//MMS ID TO ALMA TEST ENDPOINT when fetched it returns loan count
+
+app.get('/api/alma/loans/:mmsid', async (req, res) =>
+{
+  const searchMMSID = req.params.mmsid;
+  const url = new URL(`https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/${encodeURIComponent(searchMMSID)}/loans`);
+
+  url.searchParams.set("format", "json");
+  url.searchParams.set("loan_status", "Complete");
+  url.searchParams.set("limit", "100");
+
+  console.log(url.toString());
+  try
+  {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `apikey ${apiKey}`,
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok)
+    {
+      console.error("alma api error", response.status);
+
+    }
+
+    const data = await response.json();
+    console.log(data);
+
+    return res.json(data);
+
+  } catch (error)
+  {
+    console.error("error getting item", error);
+  }
+
 });
 
 app.listen(port, () =>
