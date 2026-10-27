@@ -133,7 +133,6 @@ app.get('/api/LOC/search/:isbn', async (req, res) =>
   return res.status(200).json(parsedXml);
 });
 
-
 //MMS ID TO ALMA TEST ENDPOINT when fetched it returns loan count
 
 app.get('/api/alma/loans/:mmsid', async (req, res) =>
@@ -172,6 +171,13 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
     console.error("error getting item", error);
   }
 
+});
+
+app.get('/api/owned/:isbn', async (req, res) =>
+{
+  const isbn = req.params.isbn;
+
+  return res.status(200).json({ isbn: isbn });
 });
 
 app.listen(port, () =>
