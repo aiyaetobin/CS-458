@@ -133,7 +133,6 @@ app.get('/api/LOC/search/:isbn', async (req, res) =>
   return res.status(200).json(parsedXml);
 });
 
-
 //MMS ID TO ALMA TEST ENDPOINT when fetched it returns loan count
 
 app.get('/api/alma/loans/:mmsid', async (req, res) =>
@@ -172,6 +171,43 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
     console.error("error getting item", error);
   }
 
+});
+
+app.get('/api/owned/:isbn', async (req, res) =>
+{
+  const isbn = req.params.isbn;
+
+  // building alma catalogue search URL (ISBN search)
+  // reference URL from Brianne
+      // https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?version=1.2&operation=searchRetrieve&
+      // recordSchema=marcxml&query=alma.PermanentCallNumber=E184&maximumRecords=10
+  const url = new URL('https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL');
+  url.searchParams.append('version', '1.2');
+  url.searchParams.append('operation', 'searchRetrieve');
+  url.searchParams.append('recordSchema', 'marcxml');
+  url.searchParams.append('query', `alma.isbn=${isbn}`);
+  url.searchParams.append('maximumRecords', '1');
+
+  // query catalog and parse the XML to a JS object
+  const response = await fetch(url);
+  const data = await response.text();
+  const parsedXml = parser.parse(data);
+
+  // count how many records matched
+  // If > 0 the library owns the book already
+  let count = 0;
+  const searchResponse = parsedXml.searchRetrieveResponse;
+
+  if (searchResponse && searchResponse.numberOfRecords)
+  {
+    count = searchResponse.numberOfRecords;
+  }
+
+  return res.status(200).json({
+    isbn: isbn,
+    owned: count > 0,
+    numberOfRecords: count
+  });
 });
 
 app.listen(port, () =>
