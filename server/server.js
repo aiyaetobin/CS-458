@@ -173,9 +173,29 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
 
 });
 
+
+// sanitize ISBN provided by user (remove hyphens and spaces. Make any "X" value uppercase)
+function cleanIsbn(rawIsbn)
+{
+  return rawIsbn.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
+}
+
+// check that santized ISBN has the correct shape/structure (13 digits, or 9 digits followed by another digit or X (for ISBN-10))
+function isValidIsbn(isbn)
+{
+  const pattern = /^(\d{13}|\d{9}[\dX])$/;
+  return pattern.test(isbn);
+}
+
 app.get('/api/owned/:isbn', async (req, res) =>
 {
-  const isbn = req.params.isbn;
+  const isbn = cleanIsbn(req.params.isbn);
+
+  // reject input that isnt a valid ISBN (HTTP error code 400 return)
+  if (!isValidIsbn(isbn))
+  {
+    return res.status(400).json({ error: 'Invalid ISBN' });
+  }
 
   // building alma catalogue search URL (ISBN search)
   // reference URL from Brianne
@@ -188,26 +208,43 @@ app.get('/api/owned/:isbn', async (req, res) =>
   url.searchParams.append('query', `alma.isbn=${isbn}`);
   url.searchParams.append('maximumRecords', '1');
 
-  // query catalog and parse the XML to a JS object
-  const response = await fetch(url);
-  const data = await response.text();
-  const parsedXml = parser.parse(data);
-
-  // count how many records matched
-  // If > 0 the library owns the book already
-  let count = 0;
-  const searchResponse = parsedXml.searchRetrieveResponse;
-
-  if (searchResponse && searchResponse.numberOfRecords)
+  try
   {
-    count = searchResponse.numberOfRecords;
-  }
+    // stop if catalog query takes longer than 5 seconds
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
 
-  return res.status(200).json({
-    isbn: isbn,
-    owned: count > 0,
-    numberOfRecords: count
-  });
+    // handle error page response
+    if (!response.ok)
+    {
+      return res.status(502).json({ error: 'Library catalog returned an error' });
+    }
+
+    // query catalog and parse the XML to a JS object
+    const data = await response.text();
+    const parsedXml = parser.parse(data);
+
+    // count how many records matched
+    // If > 0 the library owns the book already
+    let count = 0;
+    const searchResponse = parsedXml.searchRetrieveResponse;
+
+    if (searchResponse && searchResponse.numberOfRecords)
+    {
+      count = searchResponse.numberOfRecords;
+    }
+
+    return res.status(200).json({
+      isbn: isbn,
+      owned: count > 0,
+      numberOfRecords: count
+    });
+  }
+  catch (error)
+  {
+    // catalog couldn't be reached or took too long
+    console.error('Ownership check failed: ', error);
+    return res.status(502).json({ error: 'Could not reach the library catalog' });
+  }
 });
 
 app.listen(port, () =>
