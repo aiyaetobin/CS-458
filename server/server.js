@@ -4,6 +4,7 @@ const { OAuth2Client } = require('google-auth-library');
 const cors = require('cors');
 const session = require('express-session');
 const { XMLParser } = require("fast-xml-parser");
+const { searchEbay } = require('./services/ebay');
 
 const app = express();
 const port = 3000;
@@ -180,7 +181,7 @@ function cleanIsbn(rawIsbn)
   return rawIsbn.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
 }
 
-// check that santized ISBN has the correct shape/structure (13 digits, or 9 digits followed by another digit or X (for ISBN-10))
+// check that sanitized ISBN has the correct shape/structure (13 digits, or 9 digits followed by another digit or X (for ISBN-10))
 function isValidIsbn(isbn)
 {
   const pattern = /^(\d{13}|\d{9}[\dX])$/;
@@ -199,8 +200,8 @@ app.get('/api/owned/:isbn', async (req, res) =>
 
   // building alma catalogue search URL (ISBN search)
   // reference URL from Brianne
-      // https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?version=1.2&operation=searchRetrieve&
-      // recordSchema=marcxml&query=alma.PermanentCallNumber=E184&maximumRecords=10
+  // https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL?version=1.2&operation=searchRetrieve&
+  // recordSchema=marcxml&query=alma.PermanentCallNumber=E184&maximumRecords=10
   const url = new URL('https://na03.alma.exlibrisgroup.com/view/sru/01CALS_HUL');
   url.searchParams.append('version', '1.2');
   url.searchParams.append('operation', 'searchRetrieve');
@@ -244,6 +245,69 @@ app.get('/api/owned/:isbn', async (req, res) =>
     // catalog couldn't be reached or took too long
     console.error('Ownership check failed: ', error);
     return res.status(502).json({ error: 'Could not reach the library catalog' });
+  }
+});
+
+// for ranking offers, 'total' will be used if known, but if not, will just use 'price' (no shipping costs included)
+// if neither 'total' nor 'price' are known, place listing at the end of the list (by returning 'Infinity')
+// the use of sort() in the try/catch block of the '/api/prices' route implementation will always push Infinity
+// return values to the back
+function sortValue(offer)
+{
+  if (offer.total !== null)
+  {
+    return offer.total;
+  }
+  if (offer.price !== null)
+  {
+    return offer.price;
+  }
+  return Infinity;
+}
+
+// *** Price Search ***
+// Examples:
+//    /api/prices?isbn=9780963112309
+//    /api/prices?title=ramen obsession&author=imatome&condition=used
+app.get('/api/prices', async (req, res) =>
+{
+  const rawIsbn = req.query.isbn || '';
+  const title = req.query.title || '';
+  const author = req.query.author || '';
+  const condition = req.query.condition || 'any';
+
+  // error check for making sure at least an ISBN, title, or author is included since at least one is needed for the search
+  if (rawIsbn === '' && title === '' && author === '')
+  {
+    return res.status(400).json({ error: 'Enter an ISBN, title, or author' });
+  }
+
+  let isbn = '';
+  if (rawIsbn !== '')
+  {
+    isbn = cleanIsbn(rawIsbn);
+    if (!isValidIsbn(isbn))
+    {
+      return res.status(400).json({ error: 'Invalid ISBN' });
+    }
+  }
+
+  const keywords = `${title} ${author}`.trim();
+
+  try
+  {
+    // reference 'ebay.js' for implementation details of searchEbay() function
+    const offers = await searchEbay(isbn, keywords, condition);
+
+    // cheapest first (reference sortValue() function above, and sort() docs for details)
+    offers.sort((a, b) => sortValue(a) - sortValue(b));
+
+    return res.status(200).json({ count: offers.length, offers: offers });
+  }
+  catch (error)
+  {
+    console.error('Price search failed: ', error);
+    return res.status(502).json({ error: 'Could not get prices from eBay' });
   }
 });
 
