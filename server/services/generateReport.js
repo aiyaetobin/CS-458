@@ -51,7 +51,6 @@ async function findMmsidFromClassifier(classifier){
    
     const mmsIds = records.map(book => {
         const controlfields = book["recordData"]?.["record"]?.["controlfield"];
-
         const mmsField = controlfields.find(field => field["@_tag"] === "001");
 
         return String(mmsField["#text"]);
@@ -59,6 +58,7 @@ async function findMmsidFromClassifier(classifier){
 
 
     console.log(mmsIds)
+    return mmsIds;
 
 }
 
@@ -70,14 +70,40 @@ async function getLoanCount(mmsidArray){
         const response = await fetch(`http://localhost:3000/api/alma/loans/${encodeURIComponent(mmsid)}`);
         const data = await response.json();
 
-
-
         const loans = data["total_record_count"];
 
         results.push({ mmsid, loanCount: loans});
     }
     console.log(results);
     return results;
+}
+
+//4 return least used
+
+async function getLeastUsed(loanCounts){
+
+    const sorted =loanCounts.sort((a, b) => a.loanCount - b.loanCount);
+    
+
+    const leastUsed = sorted.slice(0, 5);
+    console.log(sorted);
+    return leastUsed;
+  
+}
+
+async function generateReport(isbn) {
+    const locClassifier = await findClassifierFromIsbn(isbn);
+
+    const searchClass = locClassifier.split(/\s+/)[0]; //temporarily splitting loc to the first whitespace to get just the class
+    //in the future we'll have to figure out to what level the library locations are specified with LOC
+
+    const mmsIds = await findMmsidFromClassifier(searchClass);
+    const loanCounts = await getLoanCount(mmsIds);
+    const leastUsed = await getLeastUsed(loanCounts);
+
+    console.log(leastUsed);
+
+    return leastUsed;
 }
 
 //testing the functions
@@ -96,3 +122,6 @@ async function getLoanCount(mmsidArray){
 //     ];
 
 // getLoanCount(mmsid);
+
+generateReport('9781433502415');
+
