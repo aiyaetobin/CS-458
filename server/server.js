@@ -97,7 +97,6 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
 
   const url = new URL(baseUrl);
 
-  // Add query parameters
   url.searchParams.append('version', '1.2');
   url.searchParams.append('operation', 'searchRetrieve');
   url.searchParams.append('recordSchema', 'marcxml');
@@ -117,7 +116,7 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
 app.get('/api/LOC/search/:isbn', async (req, res) =>
 {
   //construct url
-  const searchIsbn = req.params.isbn;
+  const searchIsbn = cleanIsbn(req.params.isbn);
   const url = new URL("https://lx2.loc.gov/sru/lcdb");
 
   url.searchParams.append("version", "1.1");
