@@ -5,8 +5,7 @@
 //*******  
  
 
-
-export async function validIsbn(ibsn) {
+async function validIsbn(ibsn) {
     //clean format
   const isbn = ibsn.replaceAll('-', '').replaceAll(' ', '').toUpperCase();
 
@@ -38,4 +37,6 @@ export async function validIsbn(ibsn) {
 
   return true;
 }
+
+module.exports = { validIsbn };
 

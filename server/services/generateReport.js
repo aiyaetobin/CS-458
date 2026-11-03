@@ -1,4 +1,4 @@
-import { validIsbn } from './isbnValidator.js';
+const { validIsbn } = require('./isbnValidator.js');
 //******************************************
 /*
   This file is a compilation of a few different test functions that are used in the process 
@@ -71,14 +71,15 @@ async function mmsidFromClassifier(classifier){
    //looks through records which is an array of books for every book it looks into their control field held below recordData and record for each book it finds
    //  their controlfield tag 001 meaning mmsid and returns it to map to be compiled all together into a array of mms ids
    // these id's can then be each individually used to query alma api for usage data and return the 5 lowest ones
+     
+   
+    const mmsIds = records.map(book => {
       const controlfields = book["recordData"]?.["record"]?.["controlfield"];
 
-      // Check if controlfields exist
       if (!controlfields) {
           return null;
       }
-   
-    const mmsIds = records.map(book => {
+
         const mmsField = controlfields.find(field => field["@_tag"] === "001");
 
         if (!mmsField?.["#text"]) {
@@ -124,7 +125,7 @@ async function getLeastUsed(loanCounts){
   if(loanCounts.length === 0){
     return null;
   }
-  
+
     const sorted =loanCounts.sort((a, b) => a.loanCount - b.loanCount);
     
 
@@ -153,19 +154,25 @@ async function generateReport(isbn) {
 // classifierFromIsbn('9781433502415');
 // mmsidFromClassifier('BS195');
 
-// let mmsid = 
-//     [
-//     '992150263402909',
-//     '9910041373302909',
-//     '992913493402909',
-//     '99977523402909',
-//     '991566853402909',
-//     '99738073402909',
-//     '992033773402909'
-//     ];
+let mmsid = 
+    [
+    '992150263402909',
+    '9910041373302909',
+    '992913493402909',
+    '99977523402909',
+    '991566853402909',
+    '99738073402909',
+    '992033773402909'
+    ];
 
-// getLoanCount(mmsid);
+getLoanCount(mmsid);
 
 // generateReport('9781433502415');
 
-export { generateReport, classifierFromIsbn, mmsidFromClassifier, getLoanCount, getLeastUsed };
+module.exports = {
+    generateReport,
+    classifierFromIsbn,
+    mmsidFromClassifier,
+    getLoanCount,
+    getLeastUsed
+};

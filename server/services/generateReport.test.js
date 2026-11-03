@@ -42,7 +42,7 @@ describe('testing mmsidFromClassifier' , () =>{
   it('should return an array of mmsids if the classifier is found in the alma catalog', async () => {
     const classifier = 'BS195';
     const result = await generateReport.mmsidFromClassifier(classifier);
-    expect(result).toEqual(['99123456789012345', '99123456789012346']);
+    expect(result).toEqual(['992150263402909', '9910041373302909']);
   })
 
 })
@@ -53,11 +53,11 @@ describe('testing getLoanCount' , () => {
   })
 
   it('should return an array of objects with mmsid and loanCount properties', async () => {
-    const mmsidArray = ['99123456789012345', '99123456789012346'];
+    const mmsidArray = ['992150263402909', '9910041373302909'];
     const result = await generateReport.getLoanCount(mmsidArray);
     expect(result).toEqual([
-      { mmsid: '99123456789012345', loanCount: 5 },
-      { mmsid: '99123456789012346', loanCount: 3 }
+      { mmsid: '992150263402909', loanCount: 0 },
+      { mmsid: '9910041373302909', loanCount: 3 }
     ]);
   })
 
@@ -66,21 +66,22 @@ describe('testing getLoanCount' , () => {
 describe('testing getLeastUsed' , () => {
   it('should return up to 5 least used mmsids from the loanCounts array', async () => {
     const loanCounts = [
-      { mmsid: '99123456789012345', loanCount: 5 },
-      { mmsid: '99123456789012346', loanCount: 3 },
-      { mmsid: '99123456789012347', loanCount: 8 },
-      { mmsid: '99123456789012348', loanCount: 2 },
-      { mmsid: '99123456789012349', loanCount: 7 },
-      { mmsid: '99123456789012344', loanCount: 9 }
-    ];
+    { mmsid: '992150263402909', loanCount: 0 },
+    { mmsid: '9910041373302909', loanCount: 3 },
+    { mmsid: '992913493402909', loanCount: 0 },
+    { mmsid: '99977523402909', loanCount: 13 },
+    { mmsid: '991566853402909', loanCount: 1 },
+    { mmsid: '99738073402909', loanCount: 0 },
+    { mmsid: '992033773402909', loanCount: 1 }
+];
 
     const result = await generateReport.getLeastUsed(loanCounts);
     expect(result).toEqual([
-      { mmsid: '99123456789012348', loanCount: 2 },
-      { mmsid: '99123456789012346', loanCount: 3 },
-      { mmsid: '99123456789012345', loanCount: 5 },
-      { mmsid: '99123456789012349', loanCount: 7 },
-      { mmsid: '99123456789012347', loanCount: 8 }
+      { mmsid: '992150263402909', loanCount: 0 },
+      { mmsid: '992913493402909', loanCount: 0 },
+      { mmsid: '99738073402909', loanCount: 0 },
+      { mmsid: '991566853402909', loanCount: 1 },
+      { mmsid: '992033773402909', loanCount: 1 }
     ]);
 
   })

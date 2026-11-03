@@ -101,7 +101,7 @@ app.get('/api/alma/search/:classifier', async (req, res) =>
   url.searchParams.append('operation', 'searchRetrieve');
   url.searchParams.append('recordSchema', 'marcxml');
   url.searchParams.append('query', cql);
-  url.searchParams.append('maximumRecords', '10');
+  url.searchParams.append('maximumRecords', '2');
 
   const response = await fetch(url);
   const data = await response.text();
