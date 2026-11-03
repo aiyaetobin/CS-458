@@ -310,6 +310,25 @@ app.get('/api/prices', async (req, res) =>
   }
 });
 
+// ********
+// OPEN LIBRARY API ENDPOINT FOR TESTING IF AN ISBN EXISTS
+// ********
+app.get('/api/openlibrary/:isbn', async (req, res) =>
+{
+  const url = new URL(`https://openlibrary.org/isbn/${req.params.isbn}.json`);
+  const isbn = cleanIsbn(req.params.isbn);
+  const response = await fetch(url);
+
+  if(response.status === 404){
+    return res.json("does not exist");
+  } 
+  if(response.status === 200){
+    return res.json("exists");
+  }
+  else{return res.json("server error");}
+  
+});
+
 app.listen(port, () =>
 {
   console.log(`Server running on http://localhost:${port}`);

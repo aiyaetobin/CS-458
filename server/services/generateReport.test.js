@@ -1,0 +1,116 @@
+import { describe, it, expect } from 'vitest';
+import * as generateReport from './generateReport.js';
+
+describe('testing classifierFromIsbn' , () =>{
+
+  it('should return a valid classifier for an existing isbn', async () => {
+    expect(await generateReport.classifierFromIsbn('9781433502415')).toBe('BS195 .E64 2007f');
+  })
+  it('should return error if the isbn is less than 10 characters', async () => {
+    expect(await generateReport.classifierFromIsbn('123456789')).toBe('ISBN must be 10 or 13 characters long'
+    );})
+
+  it('should return error if the isbn is more than 13 characters', async () => {
+    expect(await generateReport.classifierFromIsbn('12345678901234')).toBe('ISBN must be 10 or 13 characters long');
+  })
+
+  it('should return error if the isbn is 12 characters', async () => {
+    expect(await generateReport.classifierFromIsbn('123456789012')).toBe('ISBN must be 10 or 13 characters long');
+  })
+
+
+  it('should return error if the isbn contains letters', async () => {
+    expect(await generateReport.classifierFromIsbn('123456789012a')).toBe('ISBN must contain only numbers');
+  })
+
+  it('should return error if the isbn is not found in open library', async () => {
+    expect(await generateReport.classifierFromIsbn('0000000000')).toBe('ISBN not found in Open Library');
+  })
+
+  it('should return book unclassified if the isbn is valid but the LOC sru endpoint returns no results', async () => {
+    expect(await generateReport.classifierFromIsbn('9781234567890')).toBe('Book unclassified');
+  })
+
+})
+
+describe('testing mmsidFromClassifier' , () =>{
+
+  it('should return null if the classifier is not found in the alma catalog', async () => {
+    expect(await generateReport.mmsidFromClassifier('ZZ999')).toBe(null);
+  })
+
+  it('should return an array of mmsids if the classifier is found in the alma catalog', async () => {
+    const classifier = 'BS195';
+    const result = await generateReport.mmsidFromClassifier(classifier);
+    expect(result).toEqual(['99123456789012345', '99123456789012346']);
+  })
+
+})
+
+describe('testing getLoanCount' , () => {
+  it('should return null if the mmsid array is empty', async () => {
+    expect(await generateReport.getLoanCount([])).toBe(null);
+  })
+
+  it('should return an array of objects with mmsid and loanCount properties', async () => {
+    const mmsidArray = ['99123456789012345', '99123456789012346'];
+    const result = await generateReport.getLoanCount(mmsidArray);
+    expect(result).toEqual([
+      { mmsid: '99123456789012345', loanCount: 5 },
+      { mmsid: '99123456789012346', loanCount: 3 }
+    ]);
+  })
+
+})
+
+describe('testing getLeastUsed' , () => {
+  it('should return up to 5 least used mmsids from the loanCounts array', async () => {
+    const loanCounts = [
+      { mmsid: '99123456789012345', loanCount: 5 },
+      { mmsid: '99123456789012346', loanCount: 3 },
+      { mmsid: '99123456789012347', loanCount: 8 },
+      { mmsid: '99123456789012348', loanCount: 2 },
+      { mmsid: '99123456789012349', loanCount: 7 },
+      { mmsid: '99123456789012344', loanCount: 9 }
+    ];
+
+    const result = await generateReport.getLeastUsed(loanCounts);
+    expect(result).toEqual([
+      { mmsid: '99123456789012348', loanCount: 2 },
+      { mmsid: '99123456789012346', loanCount: 3 },
+      { mmsid: '99123456789012345', loanCount: 5 },
+      { mmsid: '99123456789012349', loanCount: 7 },
+      { mmsid: '99123456789012347', loanCount: 8 }
+    ]);
+
+  })
+
+  it('should return less than 5 least used mmsids if the loanCounts array has less than 5 elements', async () => {
+    const loanCounts = [
+      { mmsid: '99123456789012345', loanCount: 5 },
+      { mmsid: '99123456789012346', loanCount: 3 },
+      { mmsid: '99123456789012347', loanCount: 8 }
+    ];
+    
+    const result = await generateReport.getLeastUsed(loanCounts);
+    expect(result).toEqual([
+      { mmsid: '99123456789012346', loanCount: 3 },
+      { mmsid: '99123456789012345', loanCount: 5 },
+      { mmsid: '99123456789012347', loanCount: 8 }
+    ]);
+  })
+
+  it('should return null if the loanCounts array is empty', async () => {
+    const loanCounts = [];
+    const result = await generateReport.getLeastUsed(loanCounts);
+    expect(result).toBe(null);
+  })
+  
+  it('should return null if the loanCounts is null', async () => {
+    const loanCounts = null;
+    const result = await generateReport.getLeastUsed(loanCounts);
+    expect(result).toBe(null);
+  })
+
+
+})

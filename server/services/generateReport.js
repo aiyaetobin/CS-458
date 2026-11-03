@@ -1,18 +1,28 @@
+import { validIsbn } from './isbnValidator.js';
 //******************************************
 /*
   This file is a compilation of a few different test functions that are used in the process 
-  of generating a report from an ISBN.
+  of generating a report from an ISBN of the 5 least used items in the section a isbn would be
+  placed in if the library were to aquire it.
+
+  currently i havent done any sanitization or error checking its just proof of concept
 
   1. turn isbn into LOC classifier
-  2. turn LOC classifier into mmsids
+  2. turn LOC classifier into mmsids with that classifier
   3. get loan count for each mmsid
   4. return the 5 least used mmsids and their loan counts
 */
 //******************************************
 
 // 1. ibsn to LOC using LOC API endpoint
-async function findClassifierFromIsbn(isbn)
+async function classifierFromIsbn(isbn)
 {
+  //validate isbn  
+    const isbnValidation = await validIsbn(isbn);
+    if(isbnValidation !== true){
+        return isbnValidation;
+    }
+    
     const searchIsbn = isbn;
     const response = await fetch(`http://localhost:3000/api/LOC/search/${encodeURIComponent(searchIsbn)}`);
 
@@ -28,15 +38,23 @@ async function findClassifierFromIsbn(isbn)
     const lcClass = lcField?.subfield?.find(field => field["@_code"] === "a"); //looks for a code in 050 (the class)
     const lcCutter = lcField?.subfield?.find(field => field["@_code"] === "b");//looks for b code in 050 (the cutter)
 
-    const locClassifier = lcClass["#text"] + " " + lcCutter["#text"]; // this gives us the full library of congress number the class+cutter
+   const locClassifier = lcClass?.["#text"] + " " + lcCutter?.["#text"]; // this gives us the full library of congress number the class+cutter
+
+  if (!lcClass?.["#text"] || !lcCutter?.["#text"]) {
+    return "Book unclassified";
+  } 
 
     console.log(locClassifier);
     return locClassifier;
 }
 
 //2 LOC classifier to mmsid using alma api endpoint
-async function findMmsidFromClassifier(classifier){
+async function mmsidFromClassifier(classifier){
     const searchClassifier = classifier; 
+
+    if(classifier === "Book unclassified"){
+        return 'Book unclassified';
+    }
 
     const response = await fetch(`http://localhost:3000/api/alma/search/${encodeURIComponent(searchClassifier)}`);
 
@@ -44,15 +62,28 @@ async function findMmsidFromClassifier(classifier){
 
     const records = data["searchRetrieveResponse"]?.
     ["records"]?.
-    ["record"]
+    ["record"];
+
+    if (!records) {
+          return null;
+      }
+
    //looks through records which is an array of books for every book it looks into their control field held below recordData and record for each book it finds
    //  their controlfield tag 001 meaning mmsid and returns it to map to be compiled all together into a array of mms ids
    // these id's can then be each individually used to query alma api for usage data and return the 5 lowest ones
+      const controlfields = book["recordData"]?.["record"]?.["controlfield"];
+
+      // Check if controlfields exist
+      if (!controlfields) {
+          return null;
+      }
    
     const mmsIds = records.map(book => {
-        const controlfields = book["recordData"]?.["record"]?.["controlfield"];
         const mmsField = controlfields.find(field => field["@_tag"] === "001");
 
+        if (!mmsField?.["#text"]) {
+            return null;
+        }
         return String(mmsField["#text"]);
     })
 
@@ -75,6 +106,10 @@ async function getLoanCount(mmsidArray){
         results.push({ mmsid, loanCount: loans});
     }
     console.log(results);
+    if(results.length === 0){
+        return null;
+    }
+
     return results;
 }
 
@@ -82,6 +117,14 @@ async function getLoanCount(mmsidArray){
 
 async function getLeastUsed(loanCounts){
 
+  if(loanCounts === null){
+    return null;
+  }
+  
+  if(loanCounts.length === 0){
+    return null;
+  }
+  
     const sorted =loanCounts.sort((a, b) => a.loanCount - b.loanCount);
     
 
@@ -92,12 +135,12 @@ async function getLeastUsed(loanCounts){
 }
 
 async function generateReport(isbn) {
-    const locClassifier = await findClassifierFromIsbn(isbn);
+    const locClassifier = await classifierFromIsbn(isbn);
 
     const searchClass = locClassifier.split(/\s+/)[0]; //temporarily splitting loc to the first whitespace to get just the class
     //in the future we'll have to figure out to what level the library locations are specified with LOC
 
-    const mmsIds = await findMmsidFromClassifier(searchClass);
+    const mmsIds = await mmsidFromClassifier(searchClass);
     const loanCounts = await getLoanCount(mmsIds);
     const leastUsed = await getLeastUsed(loanCounts);
 
@@ -107,8 +150,8 @@ async function generateReport(isbn) {
 }
 
 //testing the functions
-// findClassifierFromIsbn('9781433502415');
-// findMmsidFromClassifier('BS195');
+// classifierFromIsbn('9781433502415');
+// mmsidFromClassifier('BS195');
 
 // let mmsid = 
 //     [
@@ -123,5 +166,6 @@ async function generateReport(isbn) {
 
 // getLoanCount(mmsid);
 
-generateReport('9781433502415');
+// generateReport('9781433502415');
 
+export { generateReport, classifierFromIsbn, mmsidFromClassifier, getLoanCount, getLeastUsed };
