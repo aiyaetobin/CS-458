@@ -281,12 +281,12 @@ h2 {
   text-align: center;
 }
 
-.sample-notice {
-  margin: 0 0 1rem;
+.search-error {
+  margin: 0;
   padding: 0.625rem 0.875rem;
   border-radius: var(--radius);
-  background: var(--color-notice-soft);
-  color: var(--color-notice);
+  background: var(--color-error-soft);
+  color: var(--color-error);
   font-size: 0.9375rem;
 }
 
@@ -303,7 +303,7 @@ h2 {
 }
 
 .results-summary {
-  margin: 0;
+  margin: 0 0 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -350,4 +350,23 @@ h2 {
 .results-table .numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* eBay titles are long, so let them wrap instead of forcing the table to scroll */
+.results-table .listing-title {
+  min-width: 16rem;
+  white-space: normal;
+}
+
+.listing-title a {
+  color: var(--color-brand);
+}
+
+.listing-title a:hover {
+  color: var(--color-brand-dark);
+}
+
+.listing-title a:focus-visible {
+  outline: 3px solid var(--color-brand);
+  outline-offset: 2px;
 }
