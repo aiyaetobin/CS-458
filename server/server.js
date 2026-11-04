@@ -84,6 +84,30 @@ app.get('/session', (req, res) =>
   })
 });
 
+/* LOGOUT ENDPOINT
+
+ Destroys the session on the server and clears the session cookie so that
+ /session reports the user as logged out after a page refresh.
+*/
+app.post('/logout', (req, res) =>
+{
+  req.session.destroy((error) =>
+  {
+    if (error)
+    {
+      console.error('Error during logout:', error);
+      return res.status(500).json({
+        error: 'Logout failed'
+      });
+    }
+
+    res.clearCookie('connect.sid'); //default express-session cookie name
+    return res.status(200).json({
+      message: 'Logged out'
+    });
+  });
+});
+
 
 // ***************TESTING ENDPOINTS*************** understanding alma api and LOC api
 app.get('/api/alma/search/:classifier', async (req, res) =>
