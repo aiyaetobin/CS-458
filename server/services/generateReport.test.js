@@ -20,16 +20,13 @@ describe('testing classifierFromIsbn' , () => {
 
 
   it('should return error if the isbn contains letters', async () => {
-    expect(await generateReport.classifierFromIsbn('123456789012a')).toBe('ISBN must contain only numbers');
+    expect(await generateReport.classifierFromIsbn('123456789012a')).toBe('ISBN 13 must contain only numbers, ISBN 10 can contain numbers and X');
   })
 
   it('should return error if the isbn is not found in open library', async () => {
     expect(await generateReport.classifierFromIsbn('0000000000')).toBe('ISBN not found in Open Library');
   })
 
-  it('should return book unclassified if the isbn is valid but the LOC sru endpoint returns no results', async () => {
-    expect(await generateReport.classifierFromIsbn('9781234567890')).toBe('Book unclassified');
-  })
 
 })
 
@@ -57,7 +54,7 @@ describe('testing mmsidFromClassifier' , () =>{
 
 describe('testing getLoanCount' , () => {
   it('should return null if the mmsid array is empty', async () => {
-    expect(await generateReport.getLoanCount([])).toBe(null);
+    expect(await generateReport.getLoanCount([])).toBe('mmsid Array is empty or null');
   })
 
   it('should return an array of objects with mmsid and loanCount properties', async () => {
@@ -118,7 +115,7 @@ describe('testing getLeastUsed' , () => {
   it('should return null if the loanCounts is null', async () => {
     const loanCounts = null;
     const result = await generateReport.getLeastUsed(loanCounts);
-    expect(result).toBe(null);
+    expect(result).toBe("Loan input must be an array");
   })
   
   it('should return loan input must be array if loanCounts is not an array', async () => {

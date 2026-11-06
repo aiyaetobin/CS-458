@@ -17,39 +17,67 @@ const { validIsbn } = require('./isbnValidator.js');
 // 1. ibsn to LOC using LOC API endpoint
 async function classifierFromIsbn(isbn)
 {
-  //validate isbn  
+    //validate isbn
     const isbnValidation = await validIsbn(isbn);
-    if(isbnValidation !== true){
+    if (isbnValidation !== true) {
         return isbnValidation;
     }
-    
-    const searchIsbn = isbn;
-    const response = await fetch(`http://localhost:3000/api/LOC/search/${encodeURIComponent(searchIsbn)}`);
 
-    const parsedXml = await response.json(); // the endpoint returns the xml response from LOC as xml text parsed into javascript objects
-    const fields = parsedXml["zs:searchRetrieveResponse"]?. // the information we want, the 050 field meaning library of congress classifier is stored in the datafield sub-object of the parsedXml so we save that
-    ["zs:records"]?.
-    ["zs:record"]?.
-    ["zs:recordData"]?.
-    ["record"]?.
-    ["datafield"] ?? null; 
+    const response = await fetch(
+        `http://localhost:3000/api/LOC/search/${encodeURIComponent(isbn)}`
+    );
 
-    if(!fields) {
-        return "Issue Parsing XML";
+    const parsedXml = await response.json();
+
+    const rawRecords = parsedXml["zs:searchRetrieveResponse"]?.
+        ["zs:records"]?.
+        ["zs:record"];
+
+    if (!rawRecords) {
+        return "Issue parsing XML";
     }
 
-    const lcField = fields?.find(field => field["@_tag"] === "050"); //this looks for a subfield where the datafield tag is 050
-    const lcClass = lcField?.subfield?.find(field => field["@_code"] === "a"); //looks for a code in 050 (the class)
-    const lcCutter = lcField?.subfield?.find(field => field["@_code"] === "b");//looks for b code in 050 (the cutter)
+    // If multiple records are returned, only use the first
+    const record = Array.isArray(rawRecords)
+        ? rawRecords[0]
+        : rawRecords;
 
-   const locClassifier = lcClass?.["#text"] + " " + lcCutter?.["#text"]; // this gives us the full library of congress number the class+cutter
+    const fields = record["zs:recordData"]?.
+        ["record"]?.
+        ["datafield"];
 
-  if (!lcClass?.["#text"] || !lcCutter?.["#text"]) {
+    if (!fields) {
+        return "Book unclassified";
+    }
+
+    const lcField = fields.find(
+        field => field["@_tag"] === "050"
+    );
+
+    if (!lcField) {
+        return "Book unclassified";
+    }
+
+    const subfields = Array.isArray(lcField.subfield)
+        ? lcField.subfield
+        : [lcField.subfield];
+
+    const lcClass = subfields.find(
+        field => field["@_code"] === "a"
+    );
+
+    const lcCutter = subfields.find(
+        field => field["@_code"] === "b"
+    );
+
+    if (lcClass?.["#text"] && lcCutter?.["#text"]) {
+        const locClassifier =
+            lcClass["#text"] + " " + lcCutter["#text"];
+
+        return locClassifier;
+    }
+
     return "Book unclassified";
-  } 
-
-    console.log(locClassifier);
-    return locClassifier;
 }
 
 //2 LOC classifier to mmsid using alma api endpoint
@@ -112,13 +140,10 @@ async function mmsidFromClassifier(classifier){
 async function getLoanCount(mmsidArray){
     const results = [];
 
-    if(results === null || results.length === 0){
-        return "mmsid Array is empty";
-    }
 
     for (const mmsid of mmsidArray) { 
         const response = await fetch(`http://localhost:3000/api/alma/loans/${encodeURIComponent(mmsid)}`);
-
+        const data = await response.json();
         if(response.status === 500) {
             return("Alma server error for mmsid: " + mmsid);
         }
@@ -127,8 +152,6 @@ async function getLoanCount(mmsidArray){
             return ("Error fetching loan count for mmsid: " + mmsid);
         }
 
-        const data = await response.json();
-
         const loans = data["total_record_count"];
 
         if (data?.total_record_count == null) {
@@ -136,6 +159,10 @@ async function getLoanCount(mmsidArray){
         }
 
         results.push({ mmsid, loanCount: loans});
+    }
+
+    if(results === null || results.length === 0){
+        return "mmsid Array is empty or null";
     }
 
     return results;
@@ -190,24 +217,24 @@ async function generateReport(isbn) {
     }
 
 //testing the functions
-// classifierFromIsbn('9781961884915');
-// mmsidFromClassifier('').then(console.log);
-// let mmsid = 
-//     [
-//     // '992150263402909',
-//     // '9910041373302909',
-//     // '992913493402909',
-//     // '99977523402909',
-//     // '991566853402909',
-//     // '99738073402909',
-//     // '992033773402909'
-//     ];
+// classifierFromIsbn('9781234567890').then(console.log);
+// mmsidFromClassifier('BS195').then(console.log);
+let mmsid = 
+    [
+    '992150263402909',
+    '9910041373302909',
+    '992913493402909',
+    '99977523402909',
+    '991566853402909',
+    '99738073402909',
+    '992033773402909'
+    ];
 
-// getLoanCount(mmsid).then(console.log);
+getLoanCount(mmsid).then(console.log);
 
 
 
-// generateReport('9781433502415');
+// generateReport('9781234567890').then(console.log);
 
 module.exports = {
     generateReport,
