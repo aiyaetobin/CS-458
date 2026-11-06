@@ -106,13 +106,13 @@ describe('testing getLeastUsed' , () => {
     ]);
   })
 
-  it('should return null if the loanCounts array is empty', async () => {
+  it('should return Loan input must be an array if the loanCounts array is empty', async () => {
     const loanCounts = [];
     const result = await generateReport.getLeastUsed(loanCounts);
-    expect(result).toBe(null);
+    expect(result).toBe("Loan input must be an array");
   })
   
-  it('should return null if the loanCounts is null', async () => {
+  it('should return Loan input must be an array if the loanCounts is null', async () => {
     const loanCounts = null;
     const result = await generateReport.getLeastUsed(loanCounts);
     expect(result).toBe("Loan input must be an array");

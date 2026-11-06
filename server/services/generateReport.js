@@ -14,7 +14,14 @@ const { validIsbn } = require('./isbnValidator.js');
 */
 //******************************************
 
-// 1. ibsn to LOC using LOC API endpoint
+/* *****************************************
+ 1. ISBN TO LOC CLASSIFIER 
+
+ This function takes in an ISBN, validates it and
+ sends it in a query to the LOC search endpoint
+ if the book has a LOC classifier it will return it
+
+ ******************************************/
 async function classifierFromIsbn(isbn)
 {
     //validate isbn
@@ -80,7 +87,18 @@ async function classifierFromIsbn(isbn)
     return "Book unclassified";
 }
 
-//2 LOC classifier to mmsid using alma api endpoint
+
+
+
+/* *****************************************
+ 2. CLASSIFIER TO MMSID
+
+ This function takes in a LOC classifier validates it and
+ sends it in a query to the alma search endpoint
+ if there are books in alma with that classification
+ it will return an array of those mmsids
+
+ ***************************************** */
 async function mmsidFromClassifier(classifier){
     const searchClassifier = classifier; 
     
@@ -131,14 +149,29 @@ async function mmsidFromClassifier(classifier){
     if(mmsIds.length === 0){
         return "No mmsids found for this classifier";
     }
-    console.log(mmsIds)
+    // console.log(mmsIds)
     return mmsIds;
 
 }
 
-//3. get loan count for each mmsid using alma api endpoint
+
+
+/* *****************************************
+ 3. LOAN COUNT FROM MMSID ARRAY
+
+ This function takes in an array of MMSID's and
+ for each of them it queries the loan information 
+ endpoint and it will return a 2d array of the 
+ MMSID alongside the number of loans there have
+ been associated with it
+ ******************************************/
+
 async function getLoanCount(mmsidArray){
     const results = [];
+
+    if(!Array.isArray(mmsidArray)){
+        return "getLoanCount input must be an array";
+    }
 
 
     for (const mmsid of mmsidArray) { 
@@ -168,78 +201,139 @@ async function getLoanCount(mmsidArray){
     return results;
 }
 
-//4 return least used
+
+
+/* *****************************************
+ 3. LEAST USED FROM MMSID LOAN COUNT ARRAY
+
+ this function takes a loan count array and sorts it 
+ and then it returns atleast 5 of the least used 
+ mmsid's in order from lowest to highest
+ ******************************************/
 
 async function getLeastUsed(loanCounts){
 
- if(!Array.isArray(loanCounts)) {
-    return 'Loan input must be an array';
-  }
+    if((!Array.isArray(loanCounts)) || loanCounts === null) {
+        return 'Loan input must be an array';
+    }
 
-  if(loanCounts === null){
-    return null;
-  }
-  
-  if(loanCounts.length === 0){
-    return null;
-  }
+    if(loanCounts.length === 0){
+        return 'Loan count array is empty';
+    }
 
     const sorted = loanCounts.sort((a, b) => a.loanCount - b.loanCount);
     
 
     const leastUsed = sorted.slice(0, 5);
-    console.log(sorted);
+    // console.log(sorted);
     return leastUsed;
   
 }
+// This function gets the name of a book from mmsid
+async function nameFromMMISD(mmsid){
+
+    const response = await fetch(`http://localhost:3000/api/alma/info/${encodeURIComponent(mmsid)}`)
+    const data = await response.json();
+
+    const bookTitle = data.title;
+
+    return bookTitle;
+}
+
+async function authorFromMMISD(mmsid){
+
+    const response = await fetch(`http://localhost:3000/api/alma/info/${encodeURIComponent(mmsid)}`)
+    const data = await response.json();
+
+    const bookTitle = data.author;
+
+    return bookTitle;
+}
+
+
+/* *****************************************
+ 5. GENERATE REPORT
+
+ This funtion takes all of the previous functions
+ and connects them together going from ISBN
+ to the 5 least used books in that section.
+
+ ******************************************/
 
 async function generateReport(isbn) {
     const locClassifier = await classifierFromIsbn(isbn);
 
+    console.log("Report for isbn: " + isbn);
+
+    console.log("Library of Congress Classifier: " + locClassifier);
+
     if(locClassifier === "Book unclassified" || locClassifier === "ISBN not found in Open Library" || locClassifier === "ISBN must contain only numbers" || locClassifier === "ISBN must be 10 or 13 characters long" || locClassifier === "Error checking ISBN in Open Library"){ 
         return "Invalid ISBN or Book unclassified";
     }
+    console.log("5 Least Used Books in this Section: ");
 
-
-    const searchClass = locClassifier.split(/\s+/)[0]; //temporarily splitting loc to the first whitespace to get just the class
+    const searchClass = locClassifier.match(/^[A-Z]+\d+/)?.[0]; //temporarily splitting loc to the first whitespace to get just the class
     //in the future we'll have to figure out to what level the library locations are specified with LOC
-    console.log(searchClass);
 
     const mmsIds = await mmsidFromClassifier(searchClass);
-    console.log(mmsIds);
     const loanCounts = await getLoanCount(mmsIds);
-    console.log(loanCounts);
     const leastUsed = await getLeastUsed(loanCounts);
 
-    console.log(leastUsed);
+     let mmsidForTitle, title, cleanTitle;
+     
+    for(const book of leastUsed){
+        mmsidForTitle = book.mmsid;
+        title = await nameFromMMISD(mmsidForTitle);
+        cleanTitle = title.slice(0,-1);
 
-    return leastUsed;
+        console.log(cleanTitle + ", loans: " + book.loanCount);
+    }
+
+
+
+    // console.log(leastUsed);
+
+    // return leastUsed;
     }
 
 //testing the functions
 // classifierFromIsbn('9781234567890').then(console.log);
-// mmsidFromClassifier('BS195').then(console.log);
-let mmsid = 
-    [
-    '992150263402909',
-    '9910041373302909',
-    '992913493402909',
-    '99977523402909',
-    '991566853402909',
-    '99738073402909',
-    '992033773402909'
-    ];
+// mmsidFromClassifier('').then(console.log);
 
-getLoanCount(mmsid).then(console.log);
+// let mmsid =
+//     [
+//     '992150263402909',
+//     '9910041373302909',
+//     '992913493402909',
+//     '99977523402909',
+//     '991566853402909',
+//     '99738073402909',
+//     '992033773402909'
+//     ];
+
+// getLoanCount(mmsid).then(console.log);
 
 
 
-// generateReport('9781234567890').then(console.log);
+// getLeastUsed([]).then(console.log);cl
+
+
+
+
+
+generateReport('9780374528379');
+
+
+
+
+
 
 module.exports = {
     generateReport,
     classifierFromIsbn,
     mmsidFromClassifier,
     getLoanCount,
-    getLeastUsed
+    getLeastUsed,
+    nameFromMMISD,
+    authorFromMMISD
 };

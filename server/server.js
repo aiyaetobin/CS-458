@@ -197,6 +197,37 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
 
 });
 
+app.get('/api/alma/info/:mmsid', async (req, res) =>
+{
+  const searchMMSID = req.params.mmsid;
+  const url = new URL(`https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/${encodeURIComponent(searchMMSID)}`);
+  url.searchParams.set("format", "json");
+  try{
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `apikey ${apiKey}`,
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok)
+    {
+      console.error("alma api error", response.status);
+      return res.status(502).json({
+        error: "Alma returned an error"
+      });
+    }
+
+    const data = await response.json();
+
+    return res.json(data);
+
+  }catch(error){
+    console.error("error getting item", error);
+  }
+
+});
 
 // sanitize ISBN provided by user (remove hyphens and spaces. Make any "X" value uppercase)
 function cleanIsbn(rawIsbn)
