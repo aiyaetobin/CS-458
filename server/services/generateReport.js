@@ -145,6 +145,10 @@ async function getLoanCount(mmsidArray){
 
 async function getLeastUsed(loanCounts){
 
+ if(!Array.isArray(loanCounts)) {
+    return 'Loan input must be an array';
+  }
+
   if(loanCounts === null){
     return null;
   }
@@ -153,7 +157,7 @@ async function getLeastUsed(loanCounts){
     return null;
   }
 
-    const sorted =loanCounts.sort((a, b) => a.loanCount - b.loanCount);
+    const sorted = loanCounts.sort((a, b) => a.loanCount - b.loanCount);
     
 
     const leastUsed = sorted.slice(0, 5);
@@ -205,10 +209,10 @@ async function generateReport(isbn) {
 
 // generateReport('9781433502415');
 
-// module.exports = {
-//     generateReport,
-//     classifierFromIsbn,
-//     mmsidFromClassifier,
-//     getLoanCount,
-//     getLeastUsed
-// };
+module.exports = {
+    generateReport,
+    classifierFromIsbn,
+    mmsidFromClassifier,
+    getLoanCount,
+    getLeastUsed
+};

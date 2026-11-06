@@ -1,13 +1,26 @@
 {
 
   "dependencies": {
+
     "express-session": "^1.19.0",
-    "fast-xml-parser": "^5.11.2",
-    "vitest": "^5.1.0"
+
+    "fast-xml-parser": "^5.11.2"
+
   },
+
   "scripts": {
+
     "test": "vitest",
+
     "test:run": "vitest run"
+
+  },
+
+  "devDependencies": {
+
+    "vitest": "^5.1.0"
+
   }
+
 }
 

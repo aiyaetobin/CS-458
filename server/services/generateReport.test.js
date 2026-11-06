@@ -122,7 +122,7 @@ describe('testing getLeastUsed' , () => {
   })
   
   it('should return loan input must be array if loanCounts is not an array', async () => {
-    const loanCounts = 'mmsid: ';
+    const loanCounts = 'mmsid: 992150263402909, loanCount: 0';
     const result = await generateReport.getLeastUsed(loanCounts);
     expect(result).toBe('Loan input must be an array');
   })
