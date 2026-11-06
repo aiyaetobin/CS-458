@@ -32,7 +32,11 @@ async function classifierFromIsbn(isbn)
     ["zs:record"]?.
     ["zs:recordData"]?.
     ["record"]?.
-    ["datafield"]; 
+    ["datafield"] ?? null; 
+
+    if(!fields) {
+        return "Issue Parsing XML";
+    }
 
     const lcField = fields?.find(field => field["@_tag"] === "050"); //this looks for a subfield where the datafield tag is 050
     const lcClass = lcField?.subfield?.find(field => field["@_code"] === "a"); //looks for a code in 050 (the class)
@@ -51,10 +55,19 @@ async function classifierFromIsbn(isbn)
 //2 LOC classifier to mmsid using alma api endpoint
 async function mmsidFromClassifier(classifier){
     const searchClassifier = classifier; 
+    
+    if(classifier.length < 1 || classifier === null){
+        return "Classifier must be at least 1 character long";
+    }
+
+    if(!/^[A-Za-z]/.test(classifier)){
+        return "Classifier must start with a letter";
+    }
 
     if(classifier === "Book unclassified"){
         return 'Book unclassified';
     }
+
 
     const response = await fetch(`http://localhost:3000/api/alma/search/${encodeURIComponent(searchClassifier)}`);
 
@@ -87,8 +100,9 @@ async function mmsidFromClassifier(classifier){
         }
         return String(mmsField["#text"]);
     })
-
-
+    if(mmsIds.length === 0){
+        return "No mmsids found for this classifier";
+    }
     console.log(mmsIds)
     return mmsIds;
 
@@ -98,17 +112,30 @@ async function mmsidFromClassifier(classifier){
 async function getLoanCount(mmsidArray){
     const results = [];
 
+    if(results === null || results.length === 0){
+        return "mmsid Array is empty";
+    }
+
     for (const mmsid of mmsidArray) { 
         const response = await fetch(`http://localhost:3000/api/alma/loans/${encodeURIComponent(mmsid)}`);
+
+        if(response.status === 500) {
+            return("Alma server error for mmsid: " + mmsid);
+        }
+
+        if (!response.ok) {
+            return ("Error fetching loan count for mmsid: " + mmsid);
+        }
+
         const data = await response.json();
 
         const loans = data["total_record_count"];
 
+        if (data?.total_record_count == null) {
+            return ("Error parsing loan count for mmsid: " + mmsid);
+        }
+
         results.push({ mmsid, loanCount: loans});
-    }
-    console.log(results);
-    if(results.length === 0){
-        return null;
     }
 
     return results;
@@ -138,41 +165,51 @@ async function getLeastUsed(loanCounts){
 async function generateReport(isbn) {
     const locClassifier = await classifierFromIsbn(isbn);
 
+    if(locClassifier === "Book unclassified" || locClassifier === "ISBN not found in Open Library" || locClassifier === "ISBN must contain only numbers" || locClassifier === "ISBN must be 10 or 13 characters long" || locClassifier === "Error checking ISBN in Open Library"){ 
+        return "Invalid ISBN or Book unclassified";
+    }
+
+
     const searchClass = locClassifier.split(/\s+/)[0]; //temporarily splitting loc to the first whitespace to get just the class
     //in the future we'll have to figure out to what level the library locations are specified with LOC
+    console.log(searchClass);
 
     const mmsIds = await mmsidFromClassifier(searchClass);
+    console.log(mmsIds);
     const loanCounts = await getLoanCount(mmsIds);
+    console.log(loanCounts);
     const leastUsed = await getLeastUsed(loanCounts);
 
     console.log(leastUsed);
 
     return leastUsed;
-}
+    }
 
 //testing the functions
-// classifierFromIsbn('9781433502415');
-// mmsidFromClassifier('BS195');
+// classifierFromIsbn('9781961884915');
+// mmsidFromClassifier('').then(console.log);
+// let mmsid = 
+//     [
+//     // '992150263402909',
+//     // '9910041373302909',
+//     // '992913493402909',
+//     // '99977523402909',
+//     // '991566853402909',
+//     // '99738073402909',
+//     // '992033773402909'
+//     ];
 
-let mmsid = 
-    [
-    '992150263402909',
-    '9910041373302909',
-    '992913493402909',
-    '99977523402909',
-    '991566853402909',
-    '99738073402909',
-    '992033773402909'
-    ];
+// getLoanCount(mmsid).then(console.log);
 
-getLoanCount(mmsid);
+getLoanCount
+
 
 // generateReport('9781433502415');
 
-module.exports = {
-    generateReport,
-    classifierFromIsbn,
-    mmsidFromClassifier,
-    getLoanCount,
-    getLeastUsed
-};
+// module.exports = {
+//     generateReport,
+//     classifierFromIsbn,
+//     mmsidFromClassifier,
+//     getLoanCount,
+//     getLeastUsed
+// };

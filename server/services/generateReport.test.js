@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as generateReport from './generateReport.js';
 
-describe('testing classifierFromIsbn' , () =>{
+describe('testing classifierFromIsbn' , () => {
 
   it('should return a valid classifier for an existing isbn', async () => {
     expect(await generateReport.classifierFromIsbn('9781433502415')).toBe('BS195 .E64 2007f');
@@ -42,7 +42,15 @@ describe('testing mmsidFromClassifier' , () =>{
   it('should return an array of mmsids if the classifier is found in the alma catalog', async () => {
     const classifier = 'BS195';
     const result = await generateReport.mmsidFromClassifier(classifier);
-    expect(result).toEqual(['992150263402909', '9910041373302909']);
+    expect(result).toEqual([
+      '992150263402909',
+      '9910041373302909',
+      '992913493402909',
+      '99977523402909',
+      '991566853402909',
+      '99738073402909',
+      '992033773402909'
+    ]);
   })
 
 })
@@ -114,4 +122,19 @@ describe('testing getLeastUsed' , () => {
   })
 
 
+})
+
+describe('testing generateReport' , () => {
+  it('should return an array of up to 5 least used mmsids for a valid isbn', async () => {
+    const isbn = '9781433502415';
+    const result = await generateReport.generateReport(isbn);
+    expect(result).toEqual([
+      { mmsid: '992150263402909', loanCount: 0 },
+      { mmsid: '992913493402909', loanCount: 0 },
+      { mmsid: '99738073402909', loanCount: 0 },
+      { mmsid: '991566853402909', loanCount: 1 },
+      { mmsid: '992033773402909', loanCount: 1 }
+    ]);
+  })
+  
 })
