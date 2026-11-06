@@ -201,7 +201,6 @@ async function generateReport(isbn) {
 
 // getLoanCount(mmsid).then(console.log);
 
-getLoanCount
 
 
 // generateReport('9781433502415');
