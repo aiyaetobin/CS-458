@@ -270,14 +270,19 @@ function Dashboard({ user, onSignOut })
                   <table className="results-table">
                     <thead>
                       <tr>
-                        <th scope="col">MMS ID</th>
+                        <th scope="col">Book</th>
                         <th scope="col" className="numeric">Loans</th>
                       </tr>
                     </thead>
                     <tbody>
                       {reportItems.map((item) => (
-                        <tr key={item.mmsid}>
-                          <td>{item.mmsid}</td>
+                        <tr key={item.isbn}>
+                          <td className="report-book-cell">
+                            <span className="report-book-title">{item.title}</span>
+                            <span className="report-book-details">
+                              {item.author} · ISBN {item.isbn}
+                            </span>
+                          </td>
                           <td className="numeric">{item.loanCount}</td>
                         </tr>
                       ))}

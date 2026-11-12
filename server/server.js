@@ -5,7 +5,7 @@ const cors = require('cors');
 const session = require('express-session');
 const { XMLParser } = require("fast-xml-parser");
 const { searchEbay } = require('./services/ebay');
-const { generateReport } = require('./services/generateReport');
+const { generateReport, authorFromMMISD, MMSIDFromISBN, nameFromMMISD } = require('./services/generateReport');
 
 const app = express();
 const port = 3000;
@@ -384,8 +384,10 @@ app.get('/api/report', async (req, res) =>
   try
   {
     // reference 'generateReport.js' for the steps involved
-    const leastUsed = await generateReport(isbn);
-    return res.status(200).json({ items: leastUsed || [] });
+
+    const report = await generateReport(isbn);
+
+    return res.status(200).json({ items: report || [] });
   }
   catch (error)
   {

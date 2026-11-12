@@ -266,6 +266,38 @@ h2 {
   margin-bottom: 2rem;
 }
 
+.report-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.report-table th:last-child,
+.report-table td:last-child {
+  width: 5rem;
+}
+
+.report-table .report-book-cell {
+  min-width: 0;
+  white-space: normal;
+}
+
+.report-book-title,
+.report-book-details {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.report-book-title {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.report-book-details {
+  margin-top: 0.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
 .search-input {
   flex: 1 1 14rem;
   min-width: 0;
@@ -397,4 +429,28 @@ h2 {
 .listing-title a:focus-visible {
   outline: 3px solid var(--color-brand);
   outline-offset: 2px;
+}
+
+.results-table.report-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.results-table.report-table th:first-child,
+.results-table.report-table td:first-child {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.results-table.report-table th:last-child,
+.results-table.report-table td:last-child {
+  width: 5rem;
+}
+
+.report-book-title,
+.report-book-details {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
