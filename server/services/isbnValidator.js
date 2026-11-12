@@ -24,10 +24,11 @@ async function validIsbn(ibsn) {
     return 'ISBN must be 10 or 13 characters long';
   }
   //is nan returns true if the value is not a number
-  for(let i = 0; i < isbn.length; i++){
-    if(isNaN(isbn[i])){
-      return 'ISBN must contain only numbers';
-    }
+
+  const pattern = /^(\d{13}|\d{9}[\dX])$/;
+
+  if(!pattern.test(isbn)){
+    return 'ISBN 13 must contain only numbers, ISBN 10 can contain numbers and X';
   }
 
   if(isValid === "does not exist"){

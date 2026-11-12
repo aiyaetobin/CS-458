@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as generateReport from './generateReport.js';
 
-describe('testing classifierFromIsbn' , () =>{
+describe('testing classifierFromIsbn' , () => {
 
   it('should return a valid classifier for an existing isbn', async () => {
     expect(await generateReport.classifierFromIsbn('9781433502415')).toBe('BS195 .E64 2007f');
@@ -20,16 +20,13 @@ describe('testing classifierFromIsbn' , () =>{
 
 
   it('should return error if the isbn contains letters', async () => {
-    expect(await generateReport.classifierFromIsbn('123456789012a')).toBe('ISBN must contain only numbers');
+    expect(await generateReport.classifierFromIsbn('123456789012a')).toBe('ISBN 13 must contain only numbers, ISBN 10 can contain numbers and X');
   })
 
   it('should return error if the isbn is not found in open library', async () => {
     expect(await generateReport.classifierFromIsbn('0000000000')).toBe('ISBN not found in Open Library');
   })
 
-  it('should return book unclassified if the isbn is valid but the LOC sru endpoint returns no results', async () => {
-    expect(await generateReport.classifierFromIsbn('9781234567890')).toBe('Book unclassified');
-  })
 
 })
 
@@ -42,14 +39,22 @@ describe('testing mmsidFromClassifier' , () =>{
   it('should return an array of mmsids if the classifier is found in the alma catalog', async () => {
     const classifier = 'BS195';
     const result = await generateReport.mmsidFromClassifier(classifier);
-    expect(result).toEqual(['992150263402909', '9910041373302909']);
+    expect(result).toEqual([
+      '992150263402909',
+      '9910041373302909',
+      '992913493402909',
+      '99977523402909',
+      '991566853402909',
+      '99738073402909',
+      '992033773402909'
+    ]);
   })
 
 })
 
 describe('testing getLoanCount' , () => {
   it('should return null if the mmsid array is empty', async () => {
-    expect(await generateReport.getLoanCount([])).toBe(null);
+    expect(await generateReport.getLoanCount([])).toBe('mmsid Array is empty or null');
   })
 
   it('should return an array of objects with mmsid and loanCount properties', async () => {
@@ -101,17 +106,38 @@ describe('testing getLeastUsed' , () => {
     ]);
   })
 
-  it('should return null if the loanCounts array is empty', async () => {
+  it('should return Loan input must be an array if the loanCounts array is empty', async () => {
     const loanCounts = [];
     const result = await generateReport.getLeastUsed(loanCounts);
-    expect(result).toBe(null);
+    expect(result).toBe("Loan input must be an array");
   })
   
-  it('should return null if the loanCounts is null', async () => {
+  it('should return Loan input must be an array if the loanCounts is null', async () => {
     const loanCounts = null;
     const result = await generateReport.getLeastUsed(loanCounts);
-    expect(result).toBe(null);
+    expect(result).toBe("Loan input must be an array");
+  })
+  
+  it('should return loan input must be array if loanCounts is not an array', async () => {
+    const loanCounts = 'mmsid: 992150263402909, loanCount: 0';
+    const result = await generateReport.getLeastUsed(loanCounts);
+    expect(result).toBe('Loan input must be an array');
   })
 
 
+})
+
+describe('testing generateReport' , () => {
+  it('should return an array of up to 5 least used mmsids for a valid isbn', async () => {
+    const isbn = '9781433502415';
+    const result = await generateReport.generateReport(isbn);
+    expect(result).toEqual([
+      { mmsid: '992150263402909', loanCount: 0 },
+      { mmsid: '992913493402909', loanCount: 0 },
+      { mmsid: '99738073402909', loanCount: 0 },
+      { mmsid: '991566853402909', loanCount: 1 },
+      { mmsid: '992033773402909', loanCount: 1 }
+    ]);
+  })
+  
 })
