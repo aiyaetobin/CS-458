@@ -246,6 +246,13 @@ async function authorFromMMISD(mmsid){
     return bookTitle;
 }
 
+async function MMSIDFromISBN(isbn){
+    const classifier = classifierFromIsbn(isbn);
+    const MMSID = mmsidFromClassifier(classifier);
+
+    return MMSID;
+}
+
 
 /* *****************************************
  5. GENERATE REPORT
@@ -286,41 +293,43 @@ async function generateReport(isbn) {
     const loanCounts = await getLoanCount(mmsIds);
     const leastUsed = await getLeastUsed(loanCounts);
 
-     let mmsidForTitle, title, cleanTitle;
-     
-    for(const book of leastUsed){
-        mmsidForTitle = book.mmsid;
-        title = await nameFromMMISD(mmsidForTitle);
-        cleanTitle = title.slice(0,-1);
+    const reportItems = await Promise.all(
+        leastUsed.map(async ({ mmsid, loanCount }) => {
+            const [title, author] = await Promise.all([
+                nameFromMMISD(mmsid),
+                authorFromMMISD(mmsid)
+            ]);
 
-        console.log(cleanTitle + ", loans: " + book.loanCount);
-    }
+            return {
+                isbn,
+                title,
+                author,
+                loanCount
+            };
+        })
+    );
 
-
-
-    // console.log(leastUsed);
-
-    // return leastUsed;
+    return reportItems;
     }
 
 //testing the functions
 // classifierFromIsbn('9781234567890').then(console.log);
 // mmsidFromClassifier('').then(console.log);
 
-let mmsid = 
-    [
-    '992150263402909',
-    '9910041373302909',
-    '992913493402909',
-    '99977523402909',
-    '991566853402909',
-    '99738073402909',
-    '992033773402909'
-    ];
+// let mmsid = 
+//     [
+//     '992150263402909',
+//     '9910041373302909',
+//     '992913493402909',
+//     '99977523402909',
+//     '991566853402909',
+//     '99738073402909',
+//     '992033773402909'
+//     ];
 
-getLoanCount(mmsid);
+// getLoanCount(mmsid);
 
-// generateReport('9781433502415');
+// generateReport('9781433502415').then(console.log);
 
 module.exports = {
     generateReport,
@@ -329,5 +338,6 @@ module.exports = {
     getLoanCount,
     getLeastUsed,
     nameFromMMISD,
-    authorFromMMISD
+    authorFromMMISD,
+    MMSIDFromISBN
 };
