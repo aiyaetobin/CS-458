@@ -60,13 +60,16 @@ async function mmsidFromClassifier(classifier){
 
     const data = await response.json();
 
-    const records = data["searchRetrieveResponse"]?.
+    const foundRecords = data["searchRetrieveResponse"]?.
     ["records"]?.
     ["record"];
 
-    if (!records) {
+    if (!foundRecords) {
           return null;
       }
+
+    // the xml parser gives back a single object (not an array) when Alma finds exactly one record
+    const records = Array.isArray(foundRecords) ? foundRecords : [foundRecords];
 
    //looks through records which is an array of books for every book it looks into their control field held below recordData and record for each book it finds
    //  their controlfield tag 001 meaning mmsid and returns it to map to be compiled all together into a array of mms ids
@@ -101,6 +104,10 @@ async function getLoanCount(mmsidArray){
     for (const mmsid of mmsidArray) { 
         const response = await fetch(`http://localhost:3000/api/alma/loans/${encodeURIComponent(mmsid)}`);
         const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `Loan lookup failed for ${mmsid}`);
+        }
 
         const loans = data["total_record_count"];
 
@@ -138,10 +145,21 @@ async function getLeastUsed(loanCounts){
 async function generateReport(isbn) {
     const locClassifier = await classifierFromIsbn(isbn);
 
+    // classifierFromIsbn returns a message instead of a classifier when it can't find one
+    // (validIsbn's messages, or 'Book unclassified'), so stop here rather than searching Alma for it
+    if (locClassifier === 'Book unclassified' || locClassifier.startsWith('ISBN ') || locClassifier.startsWith('Error ')) {
+        throw new Error(locClassifier);
+    }
+
     const searchClass = locClassifier.split(/\s+/)[0]; //temporarily splitting loc to the first whitespace to get just the class
     //in the future we'll have to figure out to what level the library locations are specified with LOC
 
-    const mmsIds = await mmsidFromClassifier(searchClass);
+    const foundIds = await mmsidFromClassifier(searchClass);
+    const mmsIds = (foundIds || []).filter(id => id !== null); // no records, or records missing an mms id
+    if (mmsIds.length === 0) {
+        return null; // nothing in this section to report on
+    }
+
     const loanCounts = await getLoanCount(mmsIds);
     const leastUsed = await getLeastUsed(loanCounts);
 
@@ -154,18 +172,18 @@ async function generateReport(isbn) {
 // classifierFromIsbn('9781433502415');
 // mmsidFromClassifier('BS195');
 
-let mmsid = 
-    [
-    '992150263402909',
-    '9910041373302909',
-    '992913493402909',
-    '99977523402909',
-    '991566853402909',
-    '99738073402909',
-    '992033773402909'
-    ];
+// let mmsid = 
+//     [
+//     '992150263402909',
+//     '9910041373302909',
+//     '992913493402909',
+//     '99977523402909',
+//     '991566853402909',
+//     '99738073402909',
+//     '992033773402909'
+//     ];
 
-getLoanCount(mmsid);
+// getLoanCount(mmsid);
 
 // generateReport('9781433502415');
 

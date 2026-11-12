@@ -5,6 +5,7 @@ const cors = require('cors');
 const session = require('express-session');
 const { XMLParser } = require("fast-xml-parser");
 const { searchEbay } = require('./services/ebay');
+const { generateReport } = require('./services/generateReport');
 
 const app = express();
 const port = 3000;
@@ -181,8 +182,11 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
 
     if (!response.ok)
     {
-      console.error("alma api error", response.status);
-
+      // alma sends errors back as xml, so read it as text instead of json
+      const errorText = await response.text();
+      const errorMessage = errorText.match(/<errorMessage>(.*?)<\/errorMessage>/)?.[1] || 'Alma request failed';
+      console.error("alma api error", response.status, errorMessage);
+      return res.status(502).json({ error: `Alma: ${errorMessage}` });
     }
 
     const data = await response.json();
@@ -193,6 +197,7 @@ app.get('/api/alma/loans/:mmsid', async (req, res) =>
   } catch (error)
   {
     console.error("error getting item", error);
+    return res.status(502).json({ error: 'Could not reach Alma' }); // always respond so the caller doesn't hang
   }
 
 });
@@ -331,6 +336,30 @@ app.get('/api/prices', async (req, res) =>
   {
     console.error('Price search failed: ', error);
     return res.status(502).json({ error: 'Could not get prices from eBay' });
+  }
+});
+
+// *** Least-used report ***
+// Example: /api/report?isbn=9781433502415
+// returns the 5 least-loaned items in the LOC class the ISBN would be shelved in
+app.get('/api/report', async (req, res) =>
+{
+  const isbn = cleanIsbn(req.query.isbn || '');
+  if (!isValidIsbn(isbn))
+  {
+    return res.status(400).json({ error: 'Enter a valid ISBN to generate a report' });
+  }
+
+  try
+  {
+    // reference 'generateReport.js' for the steps involved
+    const leastUsed = await generateReport(isbn);
+    return res.status(200).json({ items: leastUsed || [] });
+  }
+  catch (error)
+  {
+    console.error('Report generation failed: ', error);
+    return res.status(502).json({ error: `Could not generate a report. ${error.message}` });
   }
 });
 
