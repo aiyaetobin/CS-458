@@ -157,7 +157,7 @@ function Dashboard({ user, onSignOut })
 
       <main className="dashboard-main">
         <section className="card search-panel">
-          <h1 className="search-title">Look up a book</h1>
+          <h1 className="search-title">Search Book on Ebay for Lowest Price</h1>
           <p className="search-intro">Welcome, {user.name}! Search by ISBN, title, author, or condition.</p>
 
           <form onSubmit={handleSubmit}>
