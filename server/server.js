@@ -65,12 +65,13 @@ app.post('/login', async (req, res) =>
       googleId: payload.sub,
       email: payload.email,
       displayName: payload.name
-    })
+    });
 
     const user = {
-      id: payload.sub,
-      email: payload.email,
-      name: payload.name,
+      id: savedUser.id,
+      googleId: savedUser.googleId,
+      email: savedUser.email,
+      name: savedUser.displayName,
       picture: payload.picture
     };
 

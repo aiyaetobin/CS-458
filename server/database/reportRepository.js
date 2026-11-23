@@ -1,3 +1,5 @@
+const db = require("./db");
+
 function saveReport(userId, searchedIsbn, reportData) {
     const statement = db.prepare(`
         INSERT INTO reports (
