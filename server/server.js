@@ -1,4 +1,9 @@
-require('dotenv').config();
+const path = require("path");
+
+require("dotenv").config({
+  path: path.join(__dirname, ".env")
+});
+
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const cors = require('cors');
@@ -6,8 +11,16 @@ const session = require('express-session');
 const { XMLParser } = require("fast-xml-parser");
 const { searchEbay } = require('./services/ebay');
 const { generateReport, authorFromMMISD, MMSIDFromISBN, nameFromMMISD } = require('./services/generateReport');
+//database
+const initializeDatabase = require("./database/initializeDatabase");
+
 
 const app = express();
+initializeDatabase(); //runs the initalization when server starts
+
+const { saveUser } = require("./database/userRepository"); 
+const { saveReport } = require("./database/reportRepository");
+
 const port = 3000;
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const parser = new XMLParser({
@@ -47,10 +60,18 @@ app.post('/login', async (req, res) =>
     });
 
     const payload = ticket.getPayload();
-    const user = {
-      id: payload.sub,
+
+    const savedUser = saveUser({
+      googleId: payload.sub,
       email: payload.email,
-      name: payload.name,
+      displayName: payload.name
+    });
+
+    const user = {
+      id: savedUser.id,
+      googleId: savedUser.googleId,
+      email: savedUser.email,
+      name: savedUser.displayName,
       picture: payload.picture
     };
 
@@ -69,6 +90,10 @@ app.post('/login', async (req, res) =>
   }
 });
 
+/* SESSION ENDPOINT
+
+*/
+
 app.get('/session', (req, res) =>
 {
   if (req.session.user)
@@ -83,6 +108,43 @@ app.get('/session', (req, res) =>
   return res.status(401).json({
     loggedIn: false
   })
+});
+
+/*SAVE REPORT ENDPOINT
+
+
+*/
+app.post("/api/reports", (req,res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "You must be logged in to save a report"});
+  }
+
+  const {searchedIsbn, reportData } = req.body;
+
+  if(typeof searchedIsbn !== "string" || searchedIsbn.trim() === "") {
+    return res.status(400).json({error: "A valid searchedIsbm is required"});
+  }
+
+  if(reportData === undefined || reportData === null) {
+     return res.status(400).json({ error: "reportData is required"});
+  }
+
+  try{
+    const reportId = saveReport(
+      req.session.user.id,
+      searchedIsbn.trim(), 
+      reportData
+    );
+
+    return res.status(201).json({ message: "report saved successfully", reportId});
+
+  }catch(error){
+    console.error("Error saving report: ", error);
+    return res.status(500).json({
+      error: "unable to save report"
+    });
+  }
+
 });
 
 /* LOGOUT ENDPOINT

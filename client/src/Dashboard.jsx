@@ -24,6 +24,9 @@ function Dashboard({ user, onSignOut })
   const [reportItems, setReportItems] = useState([]);
   const [reportIsbn, setReportIsbn] = useState('');
   const activeReport = useRef(null); // lets a new report cancel one that's still running
+  //these keep track of saving reports
+  const [saveReportStatus, setSaveReportStatus] = useState('idle');
+  const [saveReportError, setSaveReportError] = useState('');
 
   const handleSubmit = async (event) =>
   {
@@ -117,6 +120,11 @@ function Dashboard({ user, onSignOut })
     setReportError('');
     setReportIsbn(trimmedIsbn);
 
+    setSaveReportStatus("idle");
+    setSaveReportError("");
+
+    
+
     try
     {
       const params = new URLSearchParams({ isbn: trimmedIsbn });
@@ -147,6 +155,51 @@ function Dashboard({ user, onSignOut })
       setReportStatus('error');
     }
   };
+
+/*
+  connects to the save report backend
+*/
+  const handleSaveReport = async () => {
+    setSaveReportStatus("saving");
+    setSaveReportError("");
+
+    try{
+      const response = await fetch(
+        "http://localhost:3000/api/reports",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          searchedIsbn: reportIsbn,
+          reportData: {
+            items: reportItems
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if(!response.ok){
+      setSaveReportStatus("error");
+      setSaveReportError( data.error || "Could not save the report.");
+      return;
+    }
+
+    setSaveReportStatus("success");
+
+    console.log("Saved report ID:", data.reportId);
+
+  }catch(error){
+    console.error("Error saving report:", error);
+
+    setSaveReportStatus("error");
+    setSaveReportError("Could not save the report.");
+  }
+};
 
   return (
     <div>
@@ -275,8 +328,8 @@ function Dashboard({ user, onSignOut })
                       </tr>
                     </thead>
                     <tbody>
-                      {reportItems.map((item) => (
-                        <tr key={item.isbn}>
+                      {reportItems.map((item, index) => (
+                        <tr key={`${item.isbn}-${index}`}>
                           <td className="report-book-cell">
                             <span className="report-book-title">{item.title}</span>
                             <span className="report-book-details">
@@ -291,6 +344,26 @@ function Dashboard({ user, onSignOut })
                 </div>
               </>
             )}
+
+            <div className="report-actions">
+              <button className="search-button" type="button" onClick={handleSaveReport} disabled={saveReportStatus === "saving"}>
+                {saveReportStatus === "saving" ? "Saving ..." : "Save report"}
+              </button>
+
+              {saveReportStatus === "success" && (
+                <p className="results-summary" role="status">
+                    Report Saved Successfully
+                </p>
+              )}
+
+              {saveReportStatus === "error" && (
+                <p className="search-error" role="alert">
+                  {saveReportError}
+                </p>
+              )}
+
+            </div>
+
           </section>
         )}
 
