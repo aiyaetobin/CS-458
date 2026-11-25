@@ -16,3 +16,8 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# SQLite database and temporary files
+*.db
+*.db-wal
+*.db-shm
