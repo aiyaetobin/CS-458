@@ -12,11 +12,12 @@ function Dashboard({ user, onSignOut })
   const [isbn, setIsbn] = useState('');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
-  const [condition, setCondition] = useState(''); // '', 'new', 'used', or 'both'
+  const [condition, setCondition] = useState(''); // '' (any), 'new', or 'used'
   const [searchStatus, setSearchStatus] = useState('idle'); // idle, loading, success, or error
   const [searchError, setSearchError] = useState('');
   const [offers, setOffers] = useState([]);
   const [searchedFor, setSearchedFor] = useState(''); // The ISBN or the title and author shown in messages
+  const [ownership, setOwnership] = useState(null); // null (unknown), 'owned', or 'not-owned'
   const activeSearch = useRef(null); // lets a new search cancel one that's still running
   const [reportIsbnInput, setReportIsbnInput] = useState(''); // the report's own ISBN field
   const [reportStatus, setReportStatus] = useState('idle'); // idle, loading, success, or error
@@ -27,6 +28,37 @@ function Dashboard({ user, onSignOut })
   //these keep track of saving reports
   const [saveReportStatus, setSaveReportStatus] = useState('idle');
   const [saveReportError, setSaveReportError] = useState('');
+
+  // uses ownership api endpoint to see if library already owns the ISBN (/api/owned in server.js)
+  const checkOwnership = async (isbnToCheck, signal) =>
+  {
+    try
+    {
+      const response = await fetch(`http://localhost:3000/api/owned/${encodeURIComponent(isbnToCheck)}`, {
+        credentials: 'include',
+        signal: signal
+      });
+      const data = await response.json();
+
+      if (!response.ok)
+      {
+        return; // invalid ISBN or catalog down (won't show badge)
+      }
+
+      if (data.owned)
+      {
+        setOwnership('owned');
+      }
+      else
+      {
+        setOwnership('not-owned');
+      }
+    }
+    catch (error)
+    {
+      // cancelled by another search or the catalog couldn't be reached (no badge shown)
+    }
+  };
 
   const handleSubmit = async (event) =>
   {
@@ -81,6 +113,13 @@ function Dashboard({ user, onSignOut })
     setSearchStatus('loading');
     setSearchError('');
     setSearchedFor(searchLabel);
+
+    // check if the library already owns the ISBN (will run alongside the price search)
+    setOwnership(null);
+    if (criteria.isbn !== '')
+    {
+      checkOwnership(criteria.isbn, controller.signal);
+    }
 
     try
     {
@@ -396,6 +435,12 @@ function Dashboard({ user, onSignOut })
         {searchStatus === 'success' && (
           <section className="card">
             <h2 className="results-title">eBay prices</h2>
+            {ownership === 'owned' && (
+              <div className="status-badge status-badge-owned">Already in the library's collection</div>
+            )}
+            {ownership === 'not-owned' && (
+              <div className="status-badge">Not in the library's collection</div>
+            )}
             {offers.length === 0 ? (
               <p className="results-summary">No Buy It Now listings found for {searchedFor}.</p>
             ) : (

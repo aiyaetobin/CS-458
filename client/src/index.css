@@ -454,3 +454,9 @@ h2 {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* "already owned" badge uses the yellow notice colors */
+.status-badge-owned {
+  background: var(--color-notice-soft);
+  color: var(--color-notice);
+}
