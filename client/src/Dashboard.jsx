@@ -16,7 +16,7 @@ function Dashboard({ user, onSignOut })
   const [searchStatus, setSearchStatus] = useState('idle'); // idle, loading, success, or error
   const [searchError, setSearchError] = useState('');
   const [offers, setOffers] = useState([]);
-  const [searchedIsbn, setSearchedIsbn] = useState('');
+  const [searchedFor, setSearchedFor] = useState(''); // The ISBN or the title and author shown in messages
   const activeSearch = useRef(null); // lets a new search cancel one that's still running
   const [reportIsbnInput, setReportIsbnInput] = useState(''); // the report's own ISBN field
   const [reportStatus, setReportStatus] = useState('idle'); // idle, loading, success, or error
@@ -34,30 +34,45 @@ function Dashboard({ user, onSignOut })
 
     activeSearch.current?.abort();
 
-    const trimmedIsbn = isbn.trim();
     const criteria = {
-      isbn: trimmedIsbn,
+      isbn: isbn.trim(),
       title: title.trim(),
       author: author.trim(),
       condition
     };
 
-    // at least one of the four fields has to be filled in
-    if (Object.values(criteria).every((value) => value === ''))
+    // condition only filters results so an ISBN, title or author is needed
+    if (criteria.isbn === '' && criteria.title === '' && criteria.author === '')
     {
-      setSearchError('Enter an ISBN, title, author, or condition to search.');
+      setSearchError('Enter an ISBN, title, or author to search.');
       setSearchStatus('error');
       return;
     }
 
-    // TODO: send title, author, and condition to the backend once it supports them
-    console.log('Search criteria:', criteria);
-
-    if (trimmedIsbn === '')
+    // only sending the fields the user filled in
+    const params = new URLSearchParams();
+    if (criteria.isbn !== '')
     {
-      setSearchStatus('unsupported');
-      setSearchError('');
-      return;
+      params.append('isbn', criteria.isbn);
+    }
+    if (criteria.title !== '')
+    {
+      params.append('title', criteria.title);
+    }
+    if (criteria.author !== '')
+    {
+      params.append('author', criteria.author);
+    }
+    if (criteria.condition !== '')
+    {
+      params.append('condition', criteria.condition);
+    }
+
+    // what to show in messages (ISBN or title and author)
+    let searchLabel = criteria.isbn;
+    if (searchLabel === '')
+    {
+      searchLabel = `${criteria.title} ${criteria.author}`.trim();
     }
 
     const controller = new AbortController();
@@ -65,11 +80,10 @@ function Dashboard({ user, onSignOut })
 
     setSearchStatus('loading');
     setSearchError('');
-    setSearchedIsbn(trimmedIsbn);
+    setSearchedFor(searchLabel);
 
     try
     {
-      const params = new URLSearchParams({ isbn: trimmedIsbn });
       const response = await fetch(`http://localhost:3000/api/prices?${params}`, {
         credentials: 'include',
         signal: controller.signal
@@ -211,7 +225,7 @@ function Dashboard({ user, onSignOut })
       <main className="dashboard-main">
         <section className="card search-panel">
           <h1 className="search-title">Search Book on Ebay for Lowest Price</h1>
-          <p className="search-intro">Welcome, {user.name}! Search by ISBN, title, author, or condition.</p>
+          <p className="search-intro">Welcome, {user.name}! Search by ISBN, title, or author, and filter by condition.</p>
 
           <form onSubmit={handleSubmit}>
             <div className="search-fields">
@@ -273,7 +287,7 @@ function Dashboard({ user, onSignOut })
               </div>
             </div>
 
-            <p className="search-hint">Fill in at least one field.</p>
+            <p className="search-hint">Fill in an ISBN, title, or author.</p>
             <button className="search-button" type="submit">Search</button>
           </form>
         </section>
@@ -371,14 +385,8 @@ function Dashboard({ user, onSignOut })
           <p className="empty-state">Results will appear here after you search.</p>
         )}
 
-        {searchStatus === 'unsupported' && (
-          <p className="empty-state" role="status">
-            Searching by title, author, or condition isn't connected yet. Add an ISBN to get prices.
-          </p>
-        )}
-
         {searchStatus === 'loading' && (
-          <p className="empty-state" role="status">Searching eBay for {searchedIsbn}...</p>
+          <p className="empty-state" role="status">Searching eBay for {searchedFor}...</p>
         )}
 
         {searchStatus === 'error' && (
@@ -389,11 +397,11 @@ function Dashboard({ user, onSignOut })
           <section className="card">
             <h2 className="results-title">eBay prices</h2>
             {offers.length === 0 ? (
-              <p className="results-summary">No Buy It Now listings found for {searchedIsbn}.</p>
+              <p className="results-summary">No Buy It Now listings found for {searchedFor}.</p>
             ) : (
               <>
                 <p className="results-summary">
-                  {offers.length} {offers.length === 1 ? 'listing' : 'listings'} for {searchedIsbn}, cheapest first.
+                  {offers.length} {offers.length === 1 ? 'listing' : 'listings'} for {searchedFor}, cheapest first.
                 </p>
                 <div className="table-wrapper">
                   <table className="results-table">
